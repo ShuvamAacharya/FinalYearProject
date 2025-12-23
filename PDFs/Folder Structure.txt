@@ -1,0 +1,119 @@
+Folder Structure
+
+EduCity/
+│
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+│
+├── .vscode/
+│   └── launch.json
+│
+├── docs/
+│   ├── architecture.md
+│   ├── api-spec.md
+│   └── database-schema.md
+│
+├── backend/
+│   ├── src/
+│   │   ├── config/
+│   │   │   ├── db.js
+│   │   │   ├── env.js
+│   │   │   └── blockchain.js
+│   │   │
+│   │   ├── models/
+│   │   │   ├── User.model.js
+│   │   │   ├── Course.model.js
+│   │   │   ├── Lesson.model.js
+│   │   │   └── Certificate.model.js
+│   │   │
+│   │   ├── controllers/
+│   │   │   ├── auth.controller.js
+│   │   │   ├── user.controller.js
+│   │   │   ├── course.controller.js
+│   │   │   └── certificate.controller.js
+│   │   │
+│   │   ├── routes/
+│   │   │   ├── auth.routes.js
+│   │   │   ├── user.routes.js
+│   │   │   ├── course.routes.js
+│   │   │   └── certificate.routes.js
+│   │   │
+│   │   ├── services/
+│   │   │   ├── auth.service.js
+│   │   │   ├── roleSwitch.service.js
+│   │   │   ├── course.service.js
+│   │   │   └── blockchain.service.js
+│   │   │
+│   │   ├── middleware/
+│   │   │   ├── auth.middleware.js
+│   │   │   ├── role.middleware.js
+│   │   │   └── error.middleware.js
+│   │   │
+│   │   ├── utils/
+│   │   │   ├── jwt.js
+│   │   │   ├── logger.js
+│   │   │   └── validators.js
+│   │   │
+│   │   ├── app.js
+│   │   └── server.js
+│   │
+│   ├── public/
+│   │   └── uploads/
+│   │
+│   ├── tests/
+│   │   └── user.test.js
+│   │
+│   ├── .env
+│   ├── package.json
+│   └── package-lock.json
+│
+├── frontend/
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── components/
+│   │   │   ├── common/
+│   │   │   ├── dashboard/
+│   │   │   └── course/
+│   │   │
+│   │   ├── pages/
+│   │   │   ├── Login.jsx
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── Learn.jsx
+│   │   │   └── Teach.jsx
+│   │   │
+│   │   ├── services/
+│   │   │   ├── api.js
+│   │   │   ├── auth.service.js
+│   │   │   └── course.service.js
+│   │   │
+│   │   ├── context/
+│   │   │   └── AuthContext.jsx
+│   │   │
+│   │   ├── hooks/
+│   │   │   └── useAuth.js
+│   │   │
+│   │   ├── utils/
+│   │   │   └── helpers.js
+│   │   │
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   │
+│   ├── public/
+│   ├── package.json
+│   └── package-lock.json
+│
+├── blockchain/
+│   ├── contracts/
+│   │   └── Certificate.sol
+│   ├── scripts/
+│   │   └── deploy.js
+│   └── hardhat.config.js
+│
+├── PDFs/
+│   ├── proposal.pdf
+│   └── final-report.pdf
+│
+├── .gitignore
+├── README.md
+└── package.json
