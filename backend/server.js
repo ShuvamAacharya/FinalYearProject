@@ -1,8 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import connectDB from './config/db.js';
-import app from './app.js';
+import connectDB from './src/config/db.js';  // ← Critical: add /src/
+import app from './src/app.js';              // ← Critical: add /src/
 
 connectDB();
 
