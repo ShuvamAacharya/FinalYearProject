@@ -1,16 +1,26 @@
 import { useAuth } from "../../context/AuthContext";
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+
+  if (!user) {
+    return <p>Loading dashboard...</p>;
+  }
 
   return (
     <div style={styles.wrapper}>
       {/* Header */}
       <header style={styles.header}>
-        <h1>Student Dashboard</h1>
-        <p>
-          Welcome back, <strong>{user?.name || "Student"}</strong>
-        </p>
+        <div>
+          <h1>Student Dashboard</h1>
+          <p>
+            Welcome back, <strong>{user.name}</strong> 👋
+          </p>
+        </div>
+
+        <button style={styles.logout} onClick={logout}>
+          Logout
+        </button>
       </header>
 
       {/* Stats */}
@@ -53,17 +63,32 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     gap: "30px",
   },
+
   header: {
     backgroundColor: "#ffffff",
     padding: "24px",
     borderRadius: "12px",
     boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
+
+  logout: {
+    padding: "10px 16px",
+    backgroundColor: "#ef4444",
+    border: "none",
+    color: "#fff",
+    borderRadius: "6px",
+    cursor: "pointer",
+  },
+
   stats: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
     gap: "20px",
   },
+
   card: {
     backgroundColor: "#ffffff",
     padding: "24px",
@@ -71,6 +96,7 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: "center",
     boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
   },
+
   content: {
     backgroundColor: "#ffffff",
     padding: "24px",

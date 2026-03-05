@@ -1,4 +1,4 @@
-import User from "../models/User.js";
+import User from "../models/User.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -126,4 +126,22 @@ export const logout = (req, res) => {
     success: true,
     message: "Logged out successfully",
   });
+};
+
+
+// =====================
+// GET CURRENT USER
+// =====================
+export const getMe = async (req, res) => {
+  try {
+    res.status(200).json({
+      success: true,
+      user: req.user
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
 };
