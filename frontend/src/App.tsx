@@ -1,35 +1,72 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { useEffect } from 'react';
+import { useAuthStore } from './store/authStore';
+import CreateQuiz from './pages/teacher/CreateQuiz';
+import QuizApprovals from './pages/admin/QuizApprovals';
+import CourseApprovals from './pages/admin/CourseApprovals';
+
+
+// Pages
+import LandingPage from './pages/LandingPage';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import StudentDashboard from './pages/student/StudentDashboard';
+import BrowseCourses from './pages/student/BrowseCourses';
+import TeacherDashboard from './pages/teacher/TeacherDashboard';
+import CreateCourse from './pages/teacher/CreateCourse';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import InstructorEligibility from './pages/admin/InstructorEligibility';
+import ProtectedRoute from './components/ProtectedRoute';
+import ManageLessons from './pages/teacher/ManageLessons';
+import CourseDetail from './pages/student/CourseDetail';
+import LessonView from './pages/student/LessonView';
+import OAuthSuccess from './pages/OAuthSuccess';
+import TakeQuiz from './pages/student/TakeQuiz';
+import QuizResults from './pages/student/QuizResults';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { token, fetchUser } = useAuthStore();
+
+  useEffect(() => {
+    if (token) {
+      fetchUser();
+    }
+  }, [token, fetchUser]);
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <Toaster position="top-right" />
+      
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        {/* Student Routes */}
+          <Route element={<ProtectedRoute allowedRoles={['student']} />}>
+            <Route path="/student/dashboard" element={<StudentDashboard />} />
+            <Route path="/student/courses/:courseId" element={<CourseDetail />} />
+            <Route path="/student/lessons/:lessonId" element={<LessonView />} />
+            <Route path="/student/quizzes/:quizId/take" element={<TakeQuiz />} />
+            <Route path="/student/quiz-results" element={<QuizResults />} />
+
+        </Route>
+
+        {/* Teacher Routes */}
+        <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
+          <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+          <Route path="/teacher/courses/:courseId/lessons" element={<ManageLessons />} />
+        </Route>
+
+        {/* Admin Routes */}
+        <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        </Route>
+      </Routes>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
