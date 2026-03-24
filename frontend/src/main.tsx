@@ -14,11 +14,11 @@
 //     </BrowserRouter>
 //   </React.StrictMode>
 // );
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import "./index.css";
 import App from './App';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from './context/auth.context';
 import { BrowserRouter } from 'react-router-dom';  // ← Keep this
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

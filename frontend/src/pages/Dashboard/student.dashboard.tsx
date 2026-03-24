@@ -1,4 +1,4 @@
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/auth.context";
 
 const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();

@@ -1,7 +1,7 @@
 import express from "express";
-import authMiddleware from "../middlewares/auth.middleware.js";
-import roleMiddleware from "../middlewares/role.middleware.js";
-import { teacherDashboard } from "../controllers/teacherController.js";
+import authMiddleware from "../middleware/auth.middleware.js";
+import roleMiddleware from "../middleware/role.middleware.js";
+import { teacherDashboard } from "../controllers/teacher.controller.js";
 
 const router = express.Router();
 
@@ -9,7 +9,7 @@ const router = express.Router();
 router.get(
   "/dashboard",
   authMiddleware,
-  roleMiddleware("teacher", "admin"), // admin optional
+  roleMiddleware("instructor", "admin"),
   teacherDashboard
 );
 

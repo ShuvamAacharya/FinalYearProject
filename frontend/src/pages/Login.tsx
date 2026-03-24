@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth.context";
 import { useNavigate } from "react-router-dom";
 import "../App.css";
-import './Login.css';
+
 
 const Login: React.FC = () => {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -16,8 +16,14 @@ const Login: React.FC = () => {
     setError("");
 
     try {
-      await login(form.email, form.password);
-      navigate("/dashboard");
+      const user = await login(form.email, form.password);
+      if (user.role === "admin") {
+        navigate("/admin/dashboard");
+      } else if (user.role === "instructor") {
+        navigate("/instructor/dashboard");
+      } else {
+        navigate("/student/dashboard");
+      }
     } catch {
       setError("Invalid email or password");
     }

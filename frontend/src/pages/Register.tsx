@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth.context";
 import { useNavigate } from "react-router-dom";
-import "./Login.css";
+import "../App.css";
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -26,14 +26,20 @@ const Register: React.FC = () => {
     }
 
     try {
-      await register(
+      const loggedUser = await register(
         form.name,
         form.email,
         form.password,
         form.role
       );
 
-      navigate("/dashboard");
+      if (loggedUser.role === "admin") {
+        navigate("/admin/dashboard");
+      } else if (loggedUser.role === "instructor") {
+        navigate("/instructor/dashboard");
+      } else {
+        navigate("/student/dashboard");
+      }
     } catch {
       setError("Registration failed");
     }

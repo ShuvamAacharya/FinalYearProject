@@ -25,13 +25,13 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   register: (
     name: string,
     email: string,
     password: string,
     role?: string
-  ) => Promise<void>;
+  ) => Promise<User>;
   logout: () => void;
 }
 
@@ -55,39 +55,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  useEffect(() => {
+useEffect(() => {
+  const token = localStorage.getItem("token");
+
+  if (token) {
     fetchUser();
-  }, []);
+  } else {
+    setLoading(false);
+  }
+}, []);
 
-  // Register
-  const register = async (
-    name: string,
-    email: string,
-    password: string,
-    role?: string
-  ) => {
-    await axios.post("/api/auth/register", {
-      name,
-      email,
-      password,
-      role,
-    });
+    // Register
+      const register = async (
+        name: string,
+        email: string,
+        password: string,
+        role?: string
+      ) => {
+        const res = await axios.post("/api/auth/register", {
+          name,
+          email,
+          password,
+          role,
+        });
 
-    await fetchUser();
-  };
+        localStorage.setItem("token", res.data.token);
 
-  // Login
+        const newUser = res.data.user as User;
+        setUser(newUser);
+        return newUser;
+      };
+
   const login = async (email: string, password: string) => {
     const res = await axios.post("/api/auth/login", {
       email,
       password,
     });
 
-    const token = res.data.token;
-
-    localStorage.setItem("token", token);
-
-    await fetchUser();
+    localStorage.setItem("token", res.data.token);
+    const loggedIn = res.data.user as User;
+    setUser(loggedIn);
+    return loggedIn;
   };
 
   // Logout
