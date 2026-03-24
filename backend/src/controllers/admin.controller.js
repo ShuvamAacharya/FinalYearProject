@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import User from "../models/user.model.js";
+// import User from "../models/user.model.js";
 
 export const adminDashboard = (req, res) => {
   res.status(200).json({

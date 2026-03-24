@@ -1,47 +1,53 @@
 import { useState } from "react";
 import { useAuth } from "../context/auth.context";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import "../App.css";
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
 
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: "student",
-  });
+    type Role = "student" | "instructor" | "admin";
+
+    const [form, setForm] = useState<{
+      name: string;
+      email: string;
+      password: string;
+      role: Role;
+    }>({
+      name: "",
+      email: "",
+      password: "",
+      role: "student",
+    });
 
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  // NEW handleRegister function
+  const handleRegister = async () => {
     if (form.password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
 
     try {
-      const loggedUser = await register(
+      const user = await register(
         form.name,
         form.email,
         form.password,
         form.role
       );
 
-      if (loggedUser.role === "admin") {
-        navigate("/admin/dashboard");
-      } else if (loggedUser.role === "instructor") {
-        navigate("/instructor/dashboard");
-      } else {
+      if (user.role === "student") {
         navigate("/student/dashboard");
+      } else if (user.role === "instructor") {
+        navigate("/instructor/dashboard");
+      } else if (user.role === "admin") {
+        navigate("/admin/dashboard");
       }
-    } catch {
-      setError("Registration failed");
+    } catch (err: any) {
+      setError(err.message || "Registration failed");
     }
   };
 
@@ -55,15 +61,18 @@ const Register: React.FC = () => {
       <div className="login-container">
         <h2>Create Your Account</h2>
 
-        <form onSubmit={handleSubmit}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleRegister();
+          }}
+        >
           <div className="form-group">
             <input
               type="text"
               placeholder="Full Name"
               value={form.name}
-              onChange={(e) =>
-                setForm({ ...form, name: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
             />
           </div>
@@ -73,9 +82,7 @@ const Register: React.FC = () => {
               type="email"
               placeholder="Email"
               value={form.email}
-              onChange={(e) =>
-                setForm({ ...form, email: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
               required
             />
           </div>
@@ -85,9 +92,7 @@ const Register: React.FC = () => {
               type="password"
               placeholder="Password"
               value={form.password}
-              onChange={(e) =>
-                setForm({ ...form, password: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
               required
             />
           </div>
@@ -97,23 +102,17 @@ const Register: React.FC = () => {
               type="password"
               placeholder="Confirm Password"
               value={confirmPassword}
-              onChange={(e) =>
-                setConfirmPassword(e.target.value)
-              }
+              onChange={(e) => setConfirmPassword(e.target.value)}
               required
             />
           </div>
-
-          {/* ROLE SELECTION */}
-
           <div className="role-select">
             <label>Register as:</label>
-
             <select
               value={form.role}
               onChange={(e) =>
-                setForm({ ...form, role: e.target.value })
-              }
+              setForm({ ...form, role: e.target.value as "student" | "instructor" | "admin" })
+}
             >
               <option value="student">Student</option>
               <option value="instructor">Instructor</option>
@@ -126,8 +125,7 @@ const Register: React.FC = () => {
         </form>
 
         <div className="login-footer">
-          Already have an account?{" "}
-          <a onClick={() => navigate("/login")}>Login</a>
+          Already have an account? <Link to="/login">Login</Link>
         </div>
       </div>
     </div>

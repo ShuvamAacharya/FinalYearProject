@@ -20,17 +20,17 @@ function App() {
 
       <Route path="/dashboard" element={<Navigate to="/student/dashboard" replace />} />
 
-      <Route element={<ProtectedRoute roles={["student"]} />}>
-        <Route path="/student/dashboard" element={<StudentDashboard />} />
-      </Route>
+            <Route element={<ProtectedRoute roles={["student"]} />}>
+              <Route path="/student/dashboard" element={<StudentDashboard />} />
+            </Route>
 
-      <Route element={<ProtectedRoute roles={["instructor", "admin"]} />}>
-        <Route path="/instructor/dashboard" element={<TeacherDashboard />} />
-      </Route>
+            <Route element={<ProtectedRoute roles={["instructor"]} />}>
+              <Route path="/instructor/dashboard" element={<TeacherDashboard />} />
+            </Route>
 
-      <Route element={<ProtectedRoute adminOnly />}>
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-      </Route>
+            <Route element={<ProtectedRoute adminOnly />}>
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            </Route>
     </Routes>
   );
 }

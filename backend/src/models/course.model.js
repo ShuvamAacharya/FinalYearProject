@@ -2,19 +2,41 @@ import mongoose from "mongoose";
 
 const courseSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true, trim: true },
-    description: { type: String, default: "" },
+    title: {
+      type: String,
+      required: true,
+    },
+
+    description: {
+      type: String,
+      required: true,
+    },
+
     instructor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    thumbnailUrl: { type: String, default: "" },
-    price: { type: Number, default: 0, min: 0 },
-    isPublished: { type: Boolean, default: false },
+
+    category: {
+      type: String,
+      default: "General",
+    },
+
+    lessons: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Lesson",
+      },
+    ],
+
+    status: {
+      type: String,
+      enum: ["draft", "pending", "approved"],
+      default: "pending",
+    },
   },
   { timestamps: true }
 );
 
-const Course = mongoose.model("Course", courseSchema);
-export default Course;
+export default mongoose.model("Course", courseSchema);

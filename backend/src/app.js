@@ -9,6 +9,10 @@ import adminRoutes from "./routes/admin.routes.js";
 
 import authRoutes from "./routes/auth.routes.js";
 
+import courseRoutes from "./routes/course.routes.js";
+import enrollmentRoutes from "./routes/enrollment.routes.js";
+import quizRoutes from "./routes/quiz.routes.js";
+
 const app = express();
 
 app.use(
@@ -23,6 +27,10 @@ app.use(cookieParser());
 app.use("/api/student", studentRoutes);
 app.use("/api/teacher", teacherRoutes);
 app.use("/api/admin", adminRoutes);
+
+app.use("/api/courses", courseRoutes);
+app.use("/api/enrollments", enrollmentRoutes);
+app.use("/api/quizzes", quizRoutes);
 
 // Routes
 app.use("/api/auth", authRoutes);

@@ -19,7 +19,7 @@ interface User {
   _id: string;
   name: string;
   email: string;
-  role: string;
+  role: "student" | "instructor" | "admin";
 }
 
 interface AuthContextType {
@@ -30,7 +30,7 @@ interface AuthContextType {
     name: string,
     email: string,
     password: string,
-    role?: string
+    role: "student" | "instructor" | "admin"
   ) => Promise<User>;
   logout: () => void;
 }
@@ -70,7 +70,7 @@ useEffect(() => {
         name: string,
         email: string,
         password: string,
-        role?: string
+        role: "student" | "instructor" | "admin"
       ) => {
         const res = await axios.post("/api/auth/register", {
           name,

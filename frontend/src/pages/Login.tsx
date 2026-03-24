@@ -3,7 +3,6 @@ import { useAuth } from "../context/auth.context";
 import { useNavigate } from "react-router-dom";
 import "../App.css";
 
-
 const Login: React.FC = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
@@ -11,22 +10,28 @@ const Login: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
+  // ✅ New clean login handler
+  const handleLogin = async (email: string, password: string) => {
     try {
-      const user = await login(form.email, form.password);
-      if (user.role === "admin") {
-        navigate("/admin/dashboard");
+      const user = await login(email, password);
+
+      if (user.role === "student") {
+        navigate("/student/dashboard");
       } else if (user.role === "instructor") {
         navigate("/instructor/dashboard");
-      } else {
-        navigate("/student/dashboard");
+      } else if (user.role === "admin") {
+        navigate("/admin/dashboard");
       }
     } catch {
       setError("Invalid email or password");
     }
+  };
+
+  // ✅ Form submit calls handleLogin
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    handleLogin(form.email, form.password);
   };
 
   return (
