@@ -20,8 +20,8 @@ const enrollmentSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['active', 'completed', 'dropped'],
-      default: 'active',
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending',
     },
     completedLessons: {
       type: Number,
@@ -37,7 +37,6 @@ const enrollmentSchema = new mongoose.Schema(
   }
 );
 
-// Prevent duplicate enrollments
-enrollmentSchema.index({ student: 1, course: 1 }, { unique: true });
+enrollmentSchema.index({ student: 1, course: 1 });
 
 export default mongoose.model('Enrollment', enrollmentSchema);
