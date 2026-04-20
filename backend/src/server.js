@@ -2,12 +2,12 @@ import app from './app.js';
 import { connectDB } from './config/db.js';
 import dotenv from 'dotenv';
 dotenv.config();
-import { configurePassport } from './config/passport.js';
+// import { configurePassport } from './config/passport.js';
 
 const PORT = process.env.PORT || 5000;
 
 // Configure passport AFTER dotenv has loaded
-configurePassport();
+// configurePassport();
 
 // Connect to database
 connectDB();
