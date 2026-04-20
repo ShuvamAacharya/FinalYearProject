@@ -8,10 +8,14 @@ const TeacherDashboard = () => {
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [quizzes, setQuizzes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reputation, setReputation] = useState<any>(null);
+  const [reputationLoading, setReputationLoading] = useState(true);
+  const [reputationError, setReputationError] = useState(false);
 
   useEffect(() => {
     fetchDashboard();
     fetchQuizzes();
+    fetchReputation();
   }, []);
 
   const fetchDashboard = async () => {
@@ -31,6 +35,17 @@ const TeacherDashboard = () => {
       setQuizzes(data.quizzes);
     } catch (error) {
       console.error('Failed to fetch quizzes');
+    }
+  };
+
+  const fetchReputation = async () => {
+    try {
+      const { data } = await axios.get('/teacher/reputation');
+      setReputation(data.reputation);
+    } catch (error) {
+      setReputationError(true);
+    } finally {
+      setReputationLoading(false);
     }
   };
 
@@ -97,6 +112,44 @@ const TeacherDashboard = () => {
               <FiClock className="text-4xl text-yellow-600" />
             </div>
           </div>
+        </div>
+
+        {/* Instructor Impact Score */}
+        <div className="rounded-lg shadow bg-white p-6 mb-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Instructor Impact Score</h2>
+          {reputationLoading ? (
+            <div className="flex items-center gap-3 text-gray-400">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600"></div>
+              <span className="text-sm">Loading reputation data...</span>
+            </div>
+          ) : reputationError ? (
+            <p className="text-sm text-red-500">Unable to load reputation data</p>
+          ) : reputation ? (
+            <div>
+              <div className="flex items-end gap-2 mb-6">
+                <span className="text-5xl font-extrabold text-primary-600">{reputation.impactScore}</span>
+                <span className="text-gray-400 text-sm mb-1 font-medium">impact points</span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <p className="text-xs text-blue-500 font-semibold uppercase tracking-wide mb-1">Courses Created</p>
+                  <p className="text-2xl font-bold text-blue-700">{reputation.coursesCreated}</p>
+                </div>
+                <div className="bg-green-50 rounded-lg p-4">
+                  <p className="text-xs text-green-500 font-semibold uppercase tracking-wide mb-1">Students Enrolled</p>
+                  <p className="text-2xl font-bold text-green-700">{reputation.studentsEnrolled}</p>
+                </div>
+                <div className="bg-purple-50 rounded-lg p-4">
+                  <p className="text-xs text-purple-500 font-semibold uppercase tracking-wide mb-1">Avg Student Score</p>
+                  <p className="text-2xl font-bold text-purple-700">{reputation.averageStudentScore}%</p>
+                </div>
+                <div className="bg-orange-50 rounded-lg p-4">
+                  <p className="text-xs text-orange-500 font-semibold uppercase tracking-wide mb-1">Completion Rate</p>
+                  <p className="text-2xl font-bold text-orange-700">{reputation.courseCompletionRate}%</p>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {/* My Courses */}
@@ -201,7 +254,7 @@ const TeacherDashboard = () => {
                         </p>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
-                        {quiz.courseId?.title || 'N/A'}
+                        {quiz.course?.title || 'N/A'}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         {quiz.questions?.length || 0} questions

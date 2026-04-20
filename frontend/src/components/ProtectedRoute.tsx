@@ -28,7 +28,11 @@ const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/" replace />;
+    const dashboardPath =
+      user.role === 'admin' ? '/admin/dashboard'
+      : user.role === 'teacher' ? '/teacher/dashboard'
+      : '/student/dashboard';
+    return <Navigate to={dashboardPath} replace />;
   }
 
   return <Outlet />;

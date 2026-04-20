@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { FiLogOut, FiUser } from 'react-icons/fi';
+import { FiLogOut } from 'react-icons/fi';
 
 const Navbar = () => {
   const { user, logout } = useAuthStore();
@@ -13,32 +13,33 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-white shadow-md">
+    <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 shadow-sm py-2">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link to={getDashboardLink()} className="flex items-center">
-            <h1 className="text-2xl font-bold text-primary-600">Educity</h1>
+          <Link to={getDashboardLink()} className="flex items-center gap-3">
+            <img src="/logo.png" alt="EduCity Logo" className="h-10 w-auto" onError={(e) => e.currentTarget.style.display = 'none'} />
+            <h1 className="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-primary-400 tracking-tight">EduCity</h1>
           </Link>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
               <img
-                src={user?.avatar || 'https://ui-avatars.com/api/?background=4F46E5&color=fff&name=User'}
+                src={user?.avatar || 'https://ui-avatars.com/api/?background=2F6FDB&color=fff&name=User'}
                 alt={user?.name}
-                className="w-10 h-10 rounded-full"
+                className="w-10 h-10 rounded-full shadow-sm"
               />
-              <div>
-                <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+              <div className="hidden sm:block">
+                <p className="text-sm font-semibold text-gray-900 leading-tight">{user?.name}</p>
+                <p className="text-xs text-primary-600 font-medium capitalize">{user?.role}</p>
               </div>
             </div>
 
             <button
               onClick={logout}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-full transition-all"
             >
               <FiLogOut />
-              Logout
+              <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </div>

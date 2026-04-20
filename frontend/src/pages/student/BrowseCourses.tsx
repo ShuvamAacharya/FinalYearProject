@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import axios from '../../api/axios';
 import Navbar from '../../components/common/Navbar';
 import toast from 'react-hot-toast';
@@ -7,18 +7,27 @@ import { FiSearch } from 'react-icons/fi';
 
 const BrowseCourses = () => {
   const [courses, setCourses] = useState<any[]>([]);
+  const [enrollmentMap, setEnrollmentMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchCourses();
+    fetchData();
   }, []);
 
-  const fetchCourses = async () => {
+  const fetchData = async () => {
     try {
-      const { data } = await axios.get('/student/courses/browse');
-      setCourses(data.courses);
+      const [coursesRes, enrollmentsRes] = await Promise.all([
+        axios.get('/courses'),
+        axios.get('/student/courses'),
+      ]);
+      setCourses(coursesRes.data.courses);
+      const map: Record<string, string> = {};
+      enrollmentsRes.data.enrollments.forEach((e: any) => {
+        const id = e.course?._id || e.course;
+        if (id) map[id.toString()] = e.status;
+      });
+      setEnrollmentMap(map);
     } catch (error) {
       toast.error('Failed to load courses');
     } finally {
@@ -28,9 +37,9 @@ const BrowseCourses = () => {
 
   const handleEnroll = async (courseId: string) => {
     try {
-      await axios.post(`/student/courses/${courseId}/enroll`);
-      toast.success('Successfully enrolled!');
-      navigate('/student/dashboard');
+      const { data } = await axios.post(`/student/courses/${courseId}/enroll`);
+      toast.success(data.message || 'Enrollment request submitted!');
+      setEnrollmentMap((prev) => ({ ...prev, [courseId]: 'pending' }));
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Enrollment failed');
     }
@@ -111,12 +120,26 @@ const BrowseCourses = () => {
                   <span>👥 {course.enrollmentCount} students</span>
                 </div>
 
-                <button
-                  onClick={() => handleEnroll(course._id)}
-                  className="btn-primary w-full"
-                >
-                  Enroll Now
-                </button>
+                {enrollmentMap[course._id] === 'pending' && (
+                  <button disabled className="btn-primary w-full opacity-60 cursor-not-allowed">
+                    ⏳ Pending Approval
+                  </button>
+                )}
+                {enrollmentMap[course._id] === 'approved' && (
+                  <Link to={`/student/courses/${course._id}`} className="btn-primary w-full text-center block">
+                    Start Learning →
+                  </Link>
+                )}
+                {enrollmentMap[course._id] === 'rejected' && (
+                  <button onClick={() => handleEnroll(course._id)} className="btn-primary w-full">
+                    Re-request Enrollment
+                  </button>
+                )}
+                {!enrollmentMap[course._id] && (
+                  <button onClick={() => handleEnroll(course._id)} className="btn-primary w-full">
+                    Enroll Now
+                  </button>
+                )}
               </div>
             ))}
           </div>

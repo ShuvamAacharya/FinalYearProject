@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from '../../api/axios';
 import Navbar from '../../components/common/Navbar';
 import toast from 'react-hot-toast';
 
 const CreateCourse = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    title: '',
+    title: (location.state as any)?.prefillTitle || '',
     description: '',
     category: 'Web Development',
     level: 'beginner',

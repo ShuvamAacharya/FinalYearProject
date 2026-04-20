@@ -4,11 +4,14 @@ import axios from '../../api/axios';
 import Navbar from '../../components/common/Navbar';
 import toast from 'react-hot-toast';
 import { FiCheckCircle, FiXCircle, FiClock, FiAward, FiTrendingUp } from 'react-icons/fi';
+import { useAuthStore } from '../../store/authStore';
 
 const QuizResults = () => {
+  const { user, fetchUser } = useAuthStore();
   const [results, setResults] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [promotionSentFor, setPromotionSentFor] = useState<string | null>(null);
 
   useEffect(() => {
     fetchResults();
@@ -23,6 +26,17 @@ const QuizResults = () => {
       toast.error('Failed to load quiz results');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePromotionRequest = async (resultId: string) => {
+    try {
+      await axios.put('/student/request-promotion');
+      setPromotionSentFor(resultId);
+      await fetchUser();
+      toast.success('Promotion granted! Log out and back in to access teacher features.');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Request failed');
     }
   };
 
@@ -172,6 +186,51 @@ const QuizResults = () => {
                       )}
                     </div>
                   </div>
+
+                  {/* Instructor prompt for high scores */}
+                  {result.percentage >= 85 && user?.role === 'student' && promotionSentFor !== `dismissed-${result._id}` && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      {promotionSentFor === result._id ? (
+                        <p className="text-green-700 font-semibold text-sm">
+                          ✅ Request sent! Awaiting promotion confirmation.
+                        </p>
+                      ) : (
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                          <div>
+                            <p className="font-semibold text-yellow-900 text-sm">
+                              🌟 Outstanding! You scored {result.percentage}% on {result.quizId?.title || 'this quiz'}.
+                            </p>
+                            <p className="text-yellow-700 text-xs mt-0.5">
+                              Would you like to help teach this topic to future learners?
+                            </p>
+                          </div>
+                          {user?.instructorEligible ? (
+                            <div className="flex gap-2 shrink-0">
+                              <button
+                                onClick={() => handlePromotionRequest(result._id)}
+                                className="text-xs font-semibold bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition-colors"
+                              >
+                                Yes, I'm interested
+                              </button>
+                              <button
+                                onClick={() => setPromotionSentFor(`dismissed-${result._id}`)}
+                                className="text-xs font-semibold text-yellow-700 hover:text-yellow-900 px-3 py-2 transition-colors"
+                              >
+                                Maybe later
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              disabled
+                              className="text-xs font-semibold text-gray-400 border border-gray-200 px-4 py-2 rounded-lg cursor-not-allowed shrink-0"
+                            >
+                              Keep improving to unlock Instructor status
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
