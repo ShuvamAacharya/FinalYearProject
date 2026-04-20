@@ -8,6 +8,13 @@ interface User {
   email: string;
   role: 'student' | 'teacher' | 'admin';
   avatar: string;
+  instructorEligible?: boolean;
+  performanceMetrics?: {
+    totalQuizzesTaken: number;
+    averageScore: number;
+    totalPointsEarned: number;
+    averageCompletionTime: number;
+  };
 }
 
 interface AuthState {
