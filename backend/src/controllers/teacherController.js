@@ -2,6 +2,7 @@ import Course from '../models/Course.js';
 import Quiz from '../models/Quiz.js';
 import Enrollment from '../models/Enrollment.js';
 import Activity from '../models/Activity.js';
+import QuizAttempt from '../models/QuizAttempt.js';
 
 // @desc    Get teacher dashboard
 // @route   GET /api/teacher/dashboard
@@ -217,6 +218,54 @@ export const deleteQuiz = async (req, res) => {
     res.json({ success: true, message: 'Quiz deleted' });
   } catch (error) {
     console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// @desc    Get instructor reputation / impact score
+// @route   GET /api/teacher/reputation
+// @access  Private (Teacher)
+export const getReputationScore = async (req, res) => {
+  try {
+    const teacherId = req.user.id;
+
+    const courses = await Course.find({ teacher: teacherId });
+    const courseIds = courses.map((c) => c._id);
+    const coursesCreated = courses.length;
+
+    const studentsEnrolled = await Enrollment.countDocuments({ course: { $in: courseIds } });
+
+    const attempts = await QuizAttempt.find({ courseId: { $in: courseIds } });
+    const averageStudentScore =
+      attempts.length > 0
+        ? Math.round(attempts.reduce((sum, a) => sum + a.percentage, 0) / attempts.length)
+        : 0;
+
+    const completedEnrollments = await Enrollment.countDocuments({
+      course: { $in: courseIds },
+      $or: [{ status: 'completed' }, { progress: 100 }],
+    });
+    const courseCompletionRate =
+      studentsEnrolled > 0
+        ? Math.round((completedEnrollments / studentsEnrolled) * 100)
+        : 0;
+
+    const impactScore = Math.round(
+      coursesCreated * 2 + studentsEnrolled / 10 + averageStudentScore
+    );
+
+    res.json({
+      success: true,
+      reputation: {
+        coursesCreated,
+        studentsEnrolled,
+        averageStudentScore,
+        courseCompletionRate,
+        impactScore,
+      },
+    });
+  } catch (error) {
+    console.error('Reputation score error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };

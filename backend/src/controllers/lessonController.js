@@ -27,6 +27,11 @@ export const getCourseLessons = async (req, res) => {
     const { courseId } = req.params;
     const studentId = req.user.id;
 
+    const enrollment = await Enrollment.findOne({ student: studentId, course: courseId, status: 'approved' });
+    if (!enrollment) {
+      return res.status(403).json({ success: false, message: 'Access denied. Enrollment not approved.' });
+    }
+
     const lessons = await Lesson.find({ courseId, status: 'active' }).sort({ order: 1 });
     const lessonIds = lessons.map((l) => l._id);
     const progressRecords = await LessonProgress.find({
@@ -71,6 +76,11 @@ export const completeLesson = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Lesson not found' });
     }
 
+    const enrollment = await Enrollment.findOne({ student: studentId, course: lesson.courseId, status: 'approved' });
+    if (!enrollment) {
+      return res.status(403).json({ success: false, message: 'Access denied. Enrollment not approved.' });
+    }
+
     let progress = await LessonProgress.findOne({ studentId, lessonId });
 
     if (progress && progress.completed) {
@@ -112,6 +122,11 @@ export const getCourseProgress = async (req, res) => {
   try {
     const { courseId } = req.params;
     const studentId = req.user.id;
+
+    const enrollment = await Enrollment.findOne({ student: studentId, course: courseId, status: 'approved' });
+    if (!enrollment) {
+      return res.status(403).json({ success: false, message: 'Access denied. Enrollment not approved.' });
+    }
 
     const progress = await calculateCourseProgress(studentId, courseId);
 

@@ -145,7 +145,7 @@ export const getMe = async (req, res) => {
       });
     }
 
-    res.json({ 
+    res.json({
       success: true,
       user: {
         id: user._id,
@@ -153,6 +153,8 @@ export const getMe = async (req, res) => {
         email: user.email,
         role: user.role,
         avatar: user.avatar,
+        instructorEligible: user.instructorEligible,
+        performanceMetrics: user.performanceMetrics,
       }
     });
   } catch (error) {
