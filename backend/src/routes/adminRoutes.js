@@ -1,54 +1,81 @@
 import express from 'express';
+import authMiddleware from '../middleware/authMiddleware.js';
+import roleMiddleware from '../middleware/roleMiddleware.js';
+import { sendTestEmail } from '../services/emailService.js';
+import {
+  getEligibleStudents,
+  promoteToInstructor,
+  rejectInstructorPromotion,
+} from '../services/performanceService.js';
 import {
   getAdminDashboard,
+  enrollStudentInCourse,
+  getAllStudents,
+  getAllCourses,
+  createTeacher,
   getPendingCourses,
   approveCourse,
-  getTeacherActivity,
-  getStudentActivity,
-  getAllUsers,
   getPendingQuizzes,
   approveQuiz,
 } from '../controllers/adminController.js';
-import {
-  getInstructorEligible,
-  promoteStudentToInstructor,
-  rejectInstructor,
-  getTopPerformers,
-  getQuizAnalytics,
-  getStudentPerformanceDetails,
-} from '../controllers/performanceController.js';
-import { protect, authorize } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Protect all routes and authorize only admins
-router.use(protect);
-router.use(authorize('admin'));
+// Email test
+router.get('/test-email', authMiddleware, roleMiddleware('admin'), async (req, res) => {
+  try {
+    const result = await sendTestEmail(req.user.email);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // Dashboard
-router.get('/dashboard', getAdminDashboard);
+router.get('/dashboard', authMiddleware, roleMiddleware('admin'), getAdminDashboard);
 
-// Course Management
-router.get('/courses/pending', getPendingCourses);
-router.patch('/courses/:courseId/approve', approveCourse);
+// Student management
+router.get('/students', authMiddleware, roleMiddleware('admin'), getAllStudents);
+router.post('/enroll', authMiddleware, roleMiddleware('admin'), enrollStudentInCourse);
 
-// Quiz Management
-router.get('/quizzes/pending', getPendingQuizzes);
-router.put('/quizzes/:quizId/approve', approveQuiz);
+// Course management
+router.get('/courses', authMiddleware, roleMiddleware('admin'), getAllCourses);
+router.get('/courses/pending', authMiddleware, roleMiddleware('admin'), getPendingCourses);
+router.patch('/courses/:courseId/approve', authMiddleware, roleMiddleware('admin'), approveCourse);
 
-// User Management
-router.get('/users', getAllUsers);
-router.get('/teachers/activity', getTeacherActivity);
-router.get('/students/activity', getStudentActivity);
+// Quiz management
+router.get('/quizzes/pending', authMiddleware, roleMiddleware('admin'), getPendingQuizzes);
+router.put('/quizzes/:quizId/approve', authMiddleware, roleMiddleware('admin'), approveQuiz);
 
-// Instructor Eligibility & Promotion Routes
-router.get('/instructor-eligible', getInstructorEligible);
-router.put('/promote-instructor/:userId', promoteStudentToInstructor);
-router.put('/reject-instructor/:userId', rejectInstructor);
+// Teacher management
+router.post('/create-teacher', authMiddleware, roleMiddleware('admin'), createTeacher);
 
-// Performance Analytics Routes
-router.get('/top-students', getTopPerformers);
-router.get('/quiz-analytics', getQuizAnalytics);
-router.get('/student-performance/:userId', getStudentPerformanceDetails);
+// Instructor eligibility & promotion
+router.get('/instructor-eligible', authMiddleware, roleMiddleware('admin'), async (req, res) => {
+  try {
+    const students = await getEligibleStudents();
+    res.json({ success: true, students });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+router.put('/promote-instructor/:userId', authMiddleware, roleMiddleware('admin'), async (req, res) => {
+  try {
+    const user = await promoteToInstructor(req.params.userId, req.user.id);
+    res.json({ success: true, message: 'Student promoted to instructor', user });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
+router.put('/reject-instructor/:userId', authMiddleware, roleMiddleware('admin'), async (req, res) => {
+  try {
+    const user = await rejectInstructorPromotion(req.params.userId, req.user.id);
+    res.json({ success: true, message: 'Instructor promotion rejected', user });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
 
 export default router;

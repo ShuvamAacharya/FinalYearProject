@@ -7,6 +7,7 @@ import {
   createQuiz,
   updateQuiz,
   deleteQuiz,
+  getReputationScore,
 } from '../controllers/teacherController.js';
 import {
   getCourseLessons,
@@ -40,5 +41,8 @@ router.get('/quizzes', getTeacherQuizzes);
 router.post('/quizzes', createQuiz);
 router.put('/quizzes/:id', updateQuiz);
 router.delete('/quizzes/:id', deleteQuiz);
+
+// Reputation / impact score
+router.get('/reputation', getReputationScore);
 
 export default router;
