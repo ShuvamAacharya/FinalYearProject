@@ -1,9 +1,52 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from '../../api/axios';
-import Navbar from '../../components/common/Navbar';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../../store/authStore';
+
+const BG       = '#0f1117';
+const CARD     = '#1a1d27';
+const ELEVATED = '#1f2937';
+const BORDER   = '#2d3748';
+
+const DarkHeader = ({ user, onLogout }: { user: any; onLogout: () => void }) => (
+  <header className="sticky top-0 z-40 px-6 py-4" style={{ backgroundColor: CARD, borderBottom: `1px solid ${BORDER}` }}>
+    <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+          <span className="text-white font-bold text-sm leading-none">E</span>
+        </div>
+        <span className="text-white font-semibold text-base">EduCity</span>
+      </div>
+      <div className="flex items-center gap-3">
+        <span className="text-gray-300 text-sm font-medium hidden sm:inline">{user?.name}</span>
+        <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
+          style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}>
+          Admin
+        </span>
+        <button
+          onClick={onLogout}
+          className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors duration-150"
+          style={{ border: '1px solid rgba(239,68,68,0.4)', color: '#f87171', backgroundColor: 'transparent' }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+        >
+          Logout
+        </button>
+      </div>
+    </div>
+  </header>
+);
+
+const selectStyle: React.CSSProperties = {
+  backgroundColor: ELEVATED,
+  border: `1px solid ${BORDER}`,
+  color: '#f9fafb',
+};
 
 const EnrollStudent = () => {
+  const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
   const [students, setStudents] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
   const [selectedStudent, setSelectedStudent] = useState('');
@@ -11,44 +54,21 @@ const EnrollStudent = () => {
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
-      console.log('Fetching students and courses...');
-      
       const [studentsRes, coursesRes] = await Promise.all([
         axios.get('/admin/students'),
         axios.get('/admin/courses'),
       ]);
-
-      console.log('Students response:', studentsRes.data);
-      console.log('Courses response:', coursesRes.data);
-
       const studentsList = studentsRes.data.students || [];
-      const coursesList = coursesRes.data.courses || [];
-
+      const coursesList  = (coursesRes.data.courses || []).filter((c: any) => c.status === 'approved');
       setStudents(studentsList);
-      
-      // Filter only approved courses
-      const approvedCourses = coursesList.filter((c: any) => c.status === 'approved');
-      setCourses(approvedCourses);
-
-      console.log('Students loaded:', studentsList.length);
-      console.log('Approved courses loaded:', approvedCourses.length);
-
-      if (studentsList.length === 0) {
-        toast.error('No students found');
-      }
-
-      if (approvedCourses.length === 0) {
-        toast.error('No approved courses found');
-      }
-
-    } catch (error: any) {
-      console.error('Fetch data error:', error);
+      setCourses(coursesList);
+      if (studentsList.length === 0) toast.error('No students found');
+      if (coursesList.length === 0)  toast.error('No approved courses found');
+    } catch {
       toast.error('Failed to load data');
     } finally {
       setDataLoading(false);
@@ -60,113 +80,104 @@ const EnrollStudent = () => {
       toast.error('Please select both student and course');
       return;
     }
-
     setLoading(true);
-
     try {
-      const { data } = await axios.post('/admin/enroll', {
-        studentId: selectedStudent,
-        courseId: selectedCourse,
-      });
-
-      console.log('Enrollment response:', data);
-
-      toast.success('Student enrolled successfully! 🎉');
+      await axios.post('/admin/enroll', { studentId: selectedStudent, courseId: selectedCourse });
+      toast.success('Student enrolled successfully!');
       setSelectedStudent('');
       setSelectedCourse('');
     } catch (error: any) {
-      console.error('Enrollment error:', error);
       toast.error(error.response?.data?.message || 'Enrollment failed');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleLogout = () => { logout(); navigate('/'); };
+
   if (dataLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ backgroundColor: BG }}>
+        <div className="w-10 h-10 rounded-full border-2 border-red-500 border-t-transparent animate-spin mb-4" />
+        <p className="text-gray-400 text-sm animate-pulse">Loading data…</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: BG, fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <DarkHeader user={user} onLogout={handleLogout} />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Enroll Student in Course</h1>
+      <div className="max-w-3xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        {/* Back link + title */}
+        <div className="mb-8">
+          <button onClick={() => navigate('/admin/dashboard')}
+            className="text-sm text-gray-500 hover:text-green-400 transition-colors mb-3 flex items-center gap-1">
+            ← Back to Dashboard
+          </button>
+          <h1 className="text-2xl font-bold text-white">Enroll Student in Course</h1>
+          <p className="text-gray-400 text-sm mt-1">Directly enroll a student into an approved course</p>
+        </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="space-y-6">
+        {/* Form card */}
+        <div className="rounded-xl p-6 mb-6" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
+          <div className="space-y-5">
             {/* Select Student */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Student
-              </label>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Select Student</label>
               <select
                 value={selectedStudent}
                 onChange={(e) => setSelectedStudent(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
+                className="w-full rounded-lg px-4 py-3 text-sm outline-none transition-all focus:border-green-500 appearance-none"
+                style={selectStyle}
               >
-                <option value="">-- Choose a student --</option>
-                {students.map((student) => (
-                  <option key={student._id} value={student._id}>
-                    {student.name} ({student.email})
-                  </option>
+                <option value="">— Choose a student —</option>
+                {students.map((s) => (
+                  <option key={s._id} value={s._id}>{s.name} ({s.email})</option>
                 ))}
               </select>
-              <p className="mt-1 text-sm text-gray-500">
-                {students.length} student{students.length !== 1 ? 's' : ''} available
-              </p>
+              <p className="mt-1 text-xs text-gray-500">{students.length} student{students.length !== 1 ? 's' : ''} available</p>
             </div>
 
             {/* Select Course */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Course
-              </label>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Select Course</label>
               <select
                 value={selectedCourse}
                 onChange={(e) => setSelectedCourse(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
+                className="w-full rounded-lg px-4 py-3 text-sm outline-none transition-all focus:border-green-500 appearance-none"
+                style={selectStyle}
               >
-                <option value="">-- Choose a course --</option>
-                {courses.map((course) => (
-                  <option key={course._id} value={course._id}>
-                    {course.title} - {course.category}
-                  </option>
+                <option value="">— Choose a course —</option>
+                {courses.map((c) => (
+                  <option key={c._id} value={c._id}>{c.title} — {c.category}</option>
                 ))}
               </select>
-              <p className="mt-1 text-sm text-gray-500">
-                {courses.length} approved course{courses.length !== 1 ? 's' : ''} available
-              </p>
+              <p className="mt-1 text-xs text-gray-500">{courses.length} approved course{courses.length !== 1 ? 's' : ''} available</p>
             </div>
 
-            {/* Enroll Button */}
+            {/* Submit */}
             <button
               onClick={handleEnroll}
               disabled={loading || !selectedStudent || !selectedCourse}
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium text-lg"
+              className="w-full py-3 rounded-lg font-semibold text-white bg-green-500 hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-150"
             >
-              {loading ? 'Enrolling...' : '✅ Enroll Student'}
+              {loading ? 'Enrolling…' : '✅ Enroll Student'}
             </button>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="bg-white rounded-lg shadow p-6 mt-8">
-          <h2 className="text-xl font-bold mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="border rounded-lg p-4">
-              <h3 className="font-medium mb-2">Total Students</h3>
-              <p className="text-3xl font-bold text-blue-600">{students.length}</p>
+        {/* Stats row */}
+        <div className="grid grid-cols-2 gap-4">
+          {[
+            { label: 'Total Students',   value: students.length, color: '#60a5fa' },
+            { label: 'Approved Courses', value: courses.length,  color: '#4ade80' },
+          ].map((s) => (
+            <div key={s.label} className="rounded-xl p-5" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
+              <p className="text-gray-400 text-xs font-medium mb-2">{s.label}</p>
+              <p className="text-3xl font-bold" style={{ color: s.color }}>{s.value}</p>
             </div>
-            <div className="border rounded-lg p-4">
-              <h3 className="font-medium mb-2">Approved Courses</h3>
-              <p className="text-3xl font-bold text-green-600">{courses.length}</p>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </div>
