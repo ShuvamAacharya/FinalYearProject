@@ -23,9 +23,11 @@ export const getStudentDashboard = async (req, res) => {
       .filter((e) => e.status === 'approved' && e.course?._id)
       .map((e) => e.course._id);
 
+    const takenQuizIds = await QuizAttempt.distinct('quizId', { studentId: userId });
     const availableQuizzes = await Quiz.find({
       course: { $in: approvedCourseIds },
       status: 'approved',
+      _id: { $nin: takenQuizIds },
     })
       .populate('course', 'title')
       .sort({ createdAt: -1 });
