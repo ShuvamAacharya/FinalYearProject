@@ -24,14 +24,14 @@ const testEmail = async () => {
       from: process.env.EMAIL_FROM,
       to: process.env.EMAIL_USER, // Send to yourself
       subject: 'Test Email from EduCity',
-      html: '<h1>✅ Email is working!</h1><p>If you see this, email configuration is correct.</p>',
+      html: '<h1> Email is working!</h1><p>If you see this, email configuration is correct.</p>',
     });
 
-    console.log('✅ Email sent successfully!');
+    console.log(' Email sent successfully!');
     console.log('Message ID:', info.messageId);
     console.log('Check your inbox:', process.env.EMAIL_USER);
   } catch (error) {
-    console.error('❌ Email error:', error);
+    console.error(' Email error:', error);
   }
 };
 
