@@ -1,18 +1,74 @@
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { useEffect } from 'react';
-import { FaBookReader, FaChalkboardTeacher, FaCertificate, FaChartLine } from 'react-icons/fa';
+import CoursesSection from '../components/CoursesSection';
+
+// ── Icons ──────────────────────────────────────────────────────────────────
+
+const SearchIcon = ({ className = 'w-4 h-4' }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+  </svg>
+);
+
+const HamburgerIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+  </svg>
+);
+
+const CloseIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+  </svg>
+);
+
+// ── Nav data ───────────────────────────────────────────────────────────────
+
+const navItems = [
+  {
+    label: 'Courses',
+    items: [
+      { label: 'DSA / Placements',        href: '/student/browse-courses' },
+      { label: 'Web Development',          href: '/student/browse-courses' },
+      { label: 'Data Science / ML',        href: '/student/browse-courses' },
+      { label: 'Cloud / DevOps',           href: '/student/browse-courses' },
+      { label: 'Programming Languages',    href: '/student/browse-courses' },
+      { label: 'All Courses',              href: '/student/browse-courses', dividerBefore: true },
+    ],
+  },
+  {
+    label: 'Tutorials',
+    items: [
+      { label: 'Introduction to JavaScript', href: '/student/browse-courses' },
+      { label: 'Python Basics',              href: '/student/browse-courses' },
+      { label: 'Data Structures',            href: '/student/browse-courses' },
+      { label: 'Web Dev Fundamentals',       href: '/student/browse-courses' },
+    ],
+  },
+];
+
+const secondaryLinks = [
+  'DSA', 'Practice Problems', 'C', 'C++', 'Java', 'Python',
+  'JavaScript', 'Data Science', 'Machine Learning', 'Linux', 'DevOps',
+];
+
+// ── Component ──────────────────────────────────────────────────────────────
 
 const LandingPage = () => {
   const navigate = useNavigate();
-
   const { user, fetchUser } = useAuthStore();
 
+  const [heroSearch, setHeroSearch]       = useState('');
+  const [openDropdown, setOpenDropdown]   = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const navRef = useRef<HTMLElement>(null);
+
+  // Redirect if already logged in
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token && !user) {
-      fetchUser();
-    }
+    if (token && !user) fetchUser();
   }, [user, fetchUser]);
 
   useEffect(() => {
@@ -21,162 +77,333 @@ const LandingPage = () => {
     navigate(`/${user.role}/dashboard`);
   }, [user, navigate]);
 
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
   const handleLoginClick = () => {
     const savedRole = localStorage.getItem('educity_role');
-    if (savedRole) {
-      navigate(`/login?role=${savedRole}`);
-    } else {
-      navigate('/login');
-    }
+    navigate(savedRole ? `/login?role=${savedRole}` : '/login');
+  };
+
+  const handleBrowseCourses = () => {
+    setOpenDropdown(null);
+    navigate(user ? '/student/browse-courses' : '/login');
+  };
+
+  const toggleDropdown = (label: string) => {
+    setOpenDropdown((prev) => (prev === label ? null : label));
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col font-sans">
-      {/* Navbar */}
-      <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 shadow-sm py-2">
+    <div className="min-h-screen flex flex-col" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+
+      {/* ── Primary Navbar ── */}
+      <nav ref={navRef} className="sticky top-0 z-50" style={{ backgroundColor: '#1a1a1a' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="EduCity Logo" className="h-10 w-auto" onError={(e) => e.currentTarget.style.display = 'none'} />
-              <span className="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-primary-400 tracking-tight">
-                EduCity
-              </span>
+          <div className="flex items-center gap-4 h-14">
+
+            {/* Logo + name */}
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center">
+                <span className="text-white font-bold text-base leading-none">E</span>
+              </div>
+              <span className="text-white font-semibold text-base">EduCity</span>
             </div>
-            
-            <div className="flex items-center space-x-6">
+
+            {/* Search bar — hidden on small screens */}
+            <div className="relative hidden sm:block w-64 lg:w-72">
+              <input
+                type="text"
+                placeholder="Search courses..."
+                className="w-full rounded-full px-4 py-1.5 text-sm text-gray-300 placeholder-gray-500 outline-none focus:ring-1 focus:ring-green-500"
+                style={{ backgroundColor: '#2d2d2d', border: '1px solid #3d3d3d' }}
+              />
+            </div>
+
+            {/* Center nav spacer + desktop dropdowns */}
+            <div className="flex-1" />
+
+            <div className="hidden md:flex items-center gap-1">
+              {navItems.map((nav) => {
+                const isOpen = openDropdown === nav.label;
+                return (
+                  <div className="relative" key={nav.label}>
+                    <button
+                      onClick={() => toggleDropdown(nav.label)}
+                      aria-expanded={isOpen}
+                      aria-controls={`dropdown-${nav.label}`}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm font-medium transition-colors whitespace-nowrap ${
+                        isOpen
+                          ? 'text-green-400 border-b-2 border-green-400'
+                          : 'text-gray-200 hover:text-white border-b-2 border-transparent'
+                      }`}
+                    >
+                      {nav.label}
+                      <svg
+                        className="w-3 h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        style={{
+                          transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 200ms ease',
+                        }}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    {/* Desktop dropdown panel */}
+                    <div
+                      id={`dropdown-${nav.label}`}
+                      role="menu"
+                      className="absolute top-full left-0 mt-2 w-64 rounded-xl shadow-xl z-50 py-1.5 overflow-hidden"
+                      style={{
+                        background: '#1f2937',
+                        opacity: isOpen ? 1 : 0,
+                        transform: isOpen ? 'translateY(0)' : 'translateY(-6px)',
+                        transition: 'opacity 200ms ease-out, transform 200ms ease-out',
+                        pointerEvents: isOpen ? 'auto' : 'none',
+                      }}
+                    >
+                      {nav.items.map((item) => (
+                        <div key={item.label}>
+                          {'dividerBefore' in item && item.dividerBefore && (
+                            <div className="border-t border-gray-600 my-1" />
+                          )}
+                          <button
+                            role="menuitem"
+                            onClick={handleBrowseCourses}
+                            className="block w-full text-left px-5 py-3 text-sm text-gray-300 hover:bg-gray-700 hover:text-white cursor-pointer transition-colors duration-150"
+                          >
+                            {item.label}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex-1" />
+
+            {/* Right side — Sign In / Dashboard + mobile hamburger */}
+            <div className="flex items-center gap-3 shrink-0">
+              {user ? (
+                <button
+                  onClick={() => navigate(`/${user.role}/dashboard`)}
+                  className="rounded-full px-4 py-1.5 text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors"
+                >
+                  Dashboard
+                </button>
+              ) : (
+                <button
+                  onClick={handleLoginClick}
+                  className="rounded-full px-4 py-1.5 text-sm font-semibold text-green-400 hover:bg-green-500 hover:text-white transition-colors"
+                  style={{ border: '1px solid #22c55e' }}
+                >
+                  Sign In
+                </button>
+              )}
+
+              {/* Mobile hamburger */}
               <button
-                onClick={handleLoginClick}
-                className="btn-secondary"
+                className="md:hidden text-gray-300 hover:text-white transition-colors p-1"
+                onClick={() => { setMobileMenuOpen((v) => !v); setOpenDropdown(null); }}
+                aria-label="Toggle menu"
               >
-                Login
-              </button>
-              <button
-                onClick={() => navigate('/register')}
-                className="btn-primary"
-              >
-                Get Started
+                {mobileMenuOpen ? <CloseIcon /> : <HamburgerIcon />}
               </button>
             </div>
+
+          </div>
+        </div>
+
+        {/* ── Mobile menu ── */}
+        <div
+          className="md:hidden overflow-hidden transition-all duration-300"
+          style={{
+            maxHeight: mobileMenuOpen ? '600px' : '0px',
+            backgroundColor: '#1a1a1a',
+            borderTop: mobileMenuOpen ? '1px solid #2d2d2d' : 'none',
+          }}
+        >
+          <div className="px-4 py-2 pb-4 space-y-1">
+            {navItems.map((nav) => {
+              const isOpen = openDropdown === nav.label;
+              return (
+                <div key={nav.label}>
+                  <button
+                    onClick={() => toggleDropdown(nav.label)}
+                    aria-expanded={isOpen}
+                    aria-controls={`mobile-dropdown-${nav.label}`}
+                    className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      isOpen ? 'text-green-400 bg-gray-800' : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                    }`}
+                  >
+                    {nav.label}
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      style={{
+                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 200ms ease',
+                      }}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Mobile inline dropdown */}
+                  <div
+                    id={`mobile-dropdown-${nav.label}`}
+                    role="menu"
+                    className="overflow-hidden transition-all duration-300 pl-3"
+                    style={{ maxHeight: isOpen ? '400px' : '0px' }}
+                  >
+                    {nav.items.map((item) => (
+                      <div key={item.label}>
+                        {'dividerBefore' in item && item.dividerBefore && (
+                          <div className="border-t border-gray-700 my-1 ml-2" />
+                        )}
+                        <button
+                          role="menuitem"
+                          onClick={() => { handleBrowseCourses(); setMobileMenuOpen(false); }}
+                          className="block w-full text-left px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors duration-150"
+                        >
+                          {item.label}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </nav>
 
+      {/* ── Secondary pill bar ── */}
+      <div
+        className="sticky top-14 z-40 overflow-x-auto no-scrollbar"
+        style={{ backgroundColor: '#252525' }}
+      >
+        <div className="flex items-center gap-0 px-4 sm:px-8 whitespace-nowrap min-w-max">
+          {secondaryLinks.map((link, i) => (
+            <button
+              key={link}
+              className="text-sm text-gray-400 hover:text-green-400 transition-colors px-4 py-2.5 font-medium"
+              style={{ borderRight: i < secondaryLinks.length - 1 ? '1px solid #333' : 'none' }}
+            >
+              {link}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <main className="flex-grow">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden pt-20 pb-24 lg:pt-32 lg:pb-40">
-          {/* Subtle Background Elements */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary-100/50 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-16">
-              
-              {/* Left Side: Content */}
-              <div className="w-full lg:w-1/2 text-center lg:text-left">
-                <h1 className="text-5xl lg:text-6xl font-extrabold text-textHeading tracking-tight mb-6 leading-tight">
-                  A Modern Learning <br/>
-                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-primary-400">Environment</span>
-                </h1>
-                <p className="text-lg lg:text-xl text-textMuted mb-10 max-w-2xl mx-auto lg:mx-0 font-medium">
-                  Experience a vibrant, professional learning platform designed for ambitious students and top-tier educators. Achieve your academic goals in a highly dynamic SaaS ecosystem.
-                </p>
-                <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-                  <button
-                    onClick={() => navigate('/register')}
-                    className="btn-primary text-lg px-8 py-4"
-                  >
-                    Start Learning Today
-                  </button>
-                  <button
-                    onClick={handleLoginClick}
-                    className="btn-secondary text-lg px-8 py-4"
-                  >
-                    Sign In to Account
-                  </button>
-                </div>
-              </div>
+        {/* ── Hero Section ── */}
+        <section className="py-16 md:py-24" style={{ backgroundColor: '#1a1a1a' }}>
+          <div className="max-w-3xl mx-auto px-4 text-center">
+            <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-4">
+              Hello, What Do You Want To Learn?
+            </h1>
+            <p className="text-gray-400 text-lg mb-8">
+              Learn from expert-curated courses and tutorials
+            </p>
 
-              {/* Right Side: Visual */}
-              <div className="w-full lg:w-1/2">
-                <div className="relative rounded-3xl bg-pastel-info/30 border border-white/40 shadow-2xl overflow-hidden aspect-video transform hover:-translate-y-2 transition-transform duration-500 flex items-center justify-center">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary-200/20 to-primary-500/5 backdrop-blur-xl"></div>
-                   {/* Abstract representation of educational visual */}
-                   <div className="relative z-10 w-3/4 h-3/4 rounded-2xl bg-white shadow-soft flex flex-col p-6">
-                     <div className="w-1/2 h-6 bg-primary-100 rounded-md mb-4 animate-pulse"></div>
-                     <div className="w-full h-24 bg-pastel-info rounded-xl mb-4"></div>
-                     <div className="flex gap-4">
-                       <div className="w-1/3 h-16 bg-pastel-success rounded-xl"></div>
-                       <div className="w-1/3 h-16 bg-pastel-warning rounded-xl"></div>
-                     </div>
-                   </div>
-                </div>
-              </div>
+            <div className="relative max-w-xl mx-auto mb-8">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
+                <SearchIcon className="w-5 h-5" />
+              </span>
+              <input
+                type="text"
+                value={heroSearch}
+                onChange={(e) => setHeroSearch(e.target.value)}
+                placeholder="Search for topics, courses, tutorials..."
+                className="w-full rounded-full py-3 pl-12 pr-6 text-gray-200 placeholder-gray-500 outline-none focus:ring-2 focus:ring-green-500 transition-all"
+                style={{ backgroundColor: '#2d2d2d', border: '1px solid #3d3d3d' }}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-3 justify-center">
+              <button
+                onClick={handleBrowseCourses}
+                className="rounded-full px-6 py-2 text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors"
+              >
+                DSA Online
+              </button>
+              <button
+                onClick={handleBrowseCourses}
+                className="rounded-full px-6 py-2 text-sm font-semibold text-gray-300 hover:border-green-400 hover:text-green-400 transition-colors"
+                style={{ border: '1px solid #4b5563' }}
+              >
+                DS, ML &amp; AI
+              </button>
+              <button
+                onClick={handleBrowseCourses}
+                className="rounded-full px-6 py-2 text-sm font-semibold text-gray-300 hover:border-green-400 hover:text-green-400 transition-colors"
+                style={{ border: '1px solid #4b5563' }}
+              >
+                LLD &amp; HLD
+              </button>
             </div>
           </div>
         </section>
 
-        {/* Features Section */}
-        <section className="bg-white py-24 border-t border-gray-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-20">
-              <h2 className="text-4xl font-bold text-textHeading mb-6">Designed for Success</h2>
-              <p className="text-xl text-textMuted max-w-2xl mx-auto">
-                Everything you need to successfully learn and grow in a sophisticated academic interface.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {/* Feature 1 */}
-              <div className="card group hover:-translate-y-2">
-                <div className="w-16 h-16 rounded-full pastel-info text-primary-600 flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform">
-                  <FaBookReader />
-                </div>
-                <h3 className="text-xl font-bold text-textHeading mb-3">Interactive Quizzes</h3>
-                <p className="text-textMuted leading-relaxed text-sm">
-                  Deeply engaging content, quick tests, and practical exercises.
-                </p>
-              </div>
-
-              {/* Feature 2 */}
-              <div className="card group hover:-translate-y-2">
-                <div className="w-16 h-16 rounded-full pastel-social text-[#E96652] flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform">
-                  <FaChalkboardTeacher />
-                </div>
-                <h3 className="text-xl font-bold text-textHeading mb-3">Expert Guidance</h3>
-                <p className="text-textMuted leading-relaxed text-sm">
-                  Learn from top instructors globally and enhance your career goals.
-                </p>
-              </div>
-
-              {/* Feature 3 */}
-              <div className="card group hover:-translate-y-2">
-                <div className="w-16 h-16 rounded-full pastel-success text-[#27A372] flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform">
-                  <FaCertificate />
-                </div>
-                <h3 className="text-xl font-bold text-textHeading mb-3">Verified Certs</h3>
-                <p className="text-textMuted leading-relaxed text-sm">
-                  Receive verifiable digital credentials upon completing courses.
-                </p>
-              </div>
-
-              {/* Feature 4 */}
-              <div className="card group hover:-translate-y-2">
-                <div className="w-16 h-16 rounded-full pastel-warning text-[#D9A01C] flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform">
-                  <FaChartLine />
-                </div>
-                <h3 className="text-xl font-bold text-textHeading mb-3">Track Progress</h3>
-                <p className="text-textMuted leading-relaxed text-sm">
-                  Monitor achievements carefully and never lose sight of progress.
-                </p>
-              </div>
+        {/* ── Explore Section ── */}
+        <section className="py-12 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: '#1e1e1e' }}>
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-2xl font-bold text-white mb-6">Explore</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <button
+                onClick={handleBrowseCourses}
+                className="rounded-2xl p-8 text-left min-h-[220px] flex flex-col hover:scale-105 transition-transform duration-200 focus:outline-none"
+                style={{ background: 'linear-gradient(135deg, #1a3a5c, #1e5f8e)' }}
+              >
+                <h3 className="text-white text-2xl font-bold">Data Structures &amp; Algorithms</h3>
+                <p className="text-blue-200 text-sm mt-2">Master the fundamentals of DSA</p>
+                <span className="mt-auto self-start rounded-full px-5 py-2 text-sm font-semibold text-white border border-white hover:bg-white hover:text-blue-900 transition-colors">
+                  View Courses →
+                </span>
+              </button>
+              <button
+                onClick={handleBrowseCourses}
+                className="rounded-2xl p-8 text-left min-h-[220px] flex flex-col hover:scale-105 transition-transform duration-200 focus:outline-none"
+                style={{ background: 'linear-gradient(135deg, #5c1a3a, #8e1e5f)' }}
+              >
+                <h3 className="text-white text-2xl font-bold">Web Development</h3>
+                <p className="text-pink-200 text-sm mt-2">Build modern web applications</p>
+                <span className="mt-auto self-start rounded-full px-5 py-2 text-sm font-semibold text-white border border-white hover:bg-white hover:text-pink-900 transition-colors">
+                  View Courses →
+                </span>
+              </button>
             </div>
           </div>
         </section>
+
+        {/* ── Courses Section ── */}
+        <CoursesSection onBrowse={handleBrowseCourses} />
+
       </main>
 
-      {/* Footer Minimalist */}
-      <footer className="bg-gray-50 border-t border-gray-200 py-12 text-center text-textMuted">
-        <p className="text-sm font-medium">© {new Date().getFullYear()} EduCity Platform. Powered by Student Excellence.</p>
+      {/* ── Footer ── */}
+      <footer style={{ backgroundColor: '#1a1a1a', borderTop: '1px solid #2d2d2d' }} className="py-8 text-center">
+        <p className="text-sm text-gray-500">© {new Date().getFullYear()} EduCity Platform. Powered by Student Excellence.</p>
       </footer>
+
     </div>
   );
 };
