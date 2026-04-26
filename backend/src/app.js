@@ -21,6 +21,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
 app.use('/certificates', express.static('certificates'));
+// Images and videos are served from Cloudinary — no local /uploads static route needed
 // Routes
 app.use('/api/student', studentRoutes);
 app.use('/api/auth', authRoutes);
