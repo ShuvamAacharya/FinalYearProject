@@ -7,6 +7,9 @@ import toast from 'react-hot-toast';
 const CourseApprovals = () => {
   const [pendingCourses, setPendingCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmId, setConfirmId]   = useState<string | null>(null);
+  const [rejectId, setRejectId]     = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   useEffect(() => {
     fetchPendingCourses();
@@ -23,9 +26,7 @@ const CourseApprovals = () => {
     }
   };
 
-  const handleApprove = async (courseId: string, courseTitle: string) => {
-    if (!confirm(`Approve course: ${courseTitle}?`)) return;
-
+  const handleApprove = async (courseId: string) => {
     try {
       await axios.patch(`/admin/courses/${courseId}/approve`, { status: 'approved' });
       toast.success('Course approved!');
@@ -35,16 +36,15 @@ const CourseApprovals = () => {
     }
   };
 
-  const handleReject = async (courseId: string, courseTitle: string) => {
-    const reason = prompt(`Reject course: ${courseTitle}?\n\nEnter rejection reason (optional):`);
-    if (reason === null) return;
-
+  const handleReject = async (courseId: string) => {
     try {
       await axios.patch(`/admin/courses/${courseId}/approve`, {
         status: 'rejected',
-        rejectionReason: reason || 'No reason provided',
+        rejectionReason: rejectReason.trim() || 'No reason provided',
       });
       toast.success('Course rejected');
+      setRejectId(null);
+      setRejectReason('');
       fetchPendingCourses();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Rejection failed');
@@ -157,20 +157,67 @@ const CourseApprovals = () => {
 
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleReject(course._id, course.title)}
+                        onClick={() => { setRejectId(course._id); setConfirmId(null); setRejectReason(''); }}
                         className="flex-1 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition text-sm font-medium"
                       >
                         <FiX className="inline mr-1" />
                         Reject
                       </button>
                       <button
-                        onClick={() => handleApprove(course._id, course.title)}
+                        onClick={() => { setConfirmId(course._id); setRejectId(null); }}
                         className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium"
                       >
                         <FiCheckCircle className="inline mr-1" />
                         Approve
                       </button>
                     </div>
+
+                    {/* Approve confirmation */}
+                    {confirmId === course._id && (
+                      <div className="mt-3 p-3 bg-[#0f1117] border border-yellow-500/30 rounded-lg flex items-center gap-3">
+                        <p className="text-yellow-400 text-sm flex-1">Approve this course?</p>
+                        <button
+                          onClick={() => { handleApprove(course._id); setConfirmId(null); }}
+                          className="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1.5 rounded-lg"
+                        >
+                          Yes, Approve
+                        </button>
+                        <button
+                          onClick={() => setConfirmId(null)}
+                          className="border border-gray-600 text-gray-400 text-xs px-3 py-1.5 rounded-lg"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Reject confirmation with reason */}
+                    {rejectId === course._id && (
+                      <div className="mt-3 p-3 bg-[#0f1117] border border-red-500/30 rounded-lg space-y-2">
+                        <p className="text-red-400 text-sm">Reject this course?</p>
+                        <input
+                          type="text"
+                          value={rejectReason}
+                          onChange={(e) => setRejectReason(e.target.value)}
+                          placeholder="Reason (optional)"
+                          className="w-full text-xs px-2 py-1.5 rounded bg-gray-800 border border-gray-600 text-gray-200 outline-none"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleReject(course._id)}
+                            className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded-lg"
+                          >
+                            Yes, Reject
+                          </button>
+                          <button
+                            onClick={() => { setRejectId(null); setRejectReason(''); }}
+                            className="border border-gray-600 text-gray-400 text-xs px-3 py-1.5 rounded-lg"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
