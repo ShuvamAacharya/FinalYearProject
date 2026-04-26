@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Lesson from '../models/Lesson.js';
 import LessonProgress from '../models/LessonProgress.js';
 import Enrollment from '../models/Enrollment.js';
@@ -47,8 +48,10 @@ export const getCourseLessons = async (req, res) => {
       return {
         _id: lesson._id,
         title: lesson.title,
+        type: lesson.type,
         content: lesson.content,
         videoUrl: lesson.videoUrl,
+        coverImage: lesson.coverImage,
         duration: lesson.duration,
         order: lesson.order,
         completed: progress?.completed || false,
@@ -159,15 +162,19 @@ export const getTeacherCourseLessons = async (req, res) => {
 export const createLesson = async (req, res) => {
   try {
     const { courseId } = req.params;
-    const { title, content, videoUrl, duration, order } = req.body;
+    const { title, type, content, videoUrl, duration, order } = req.body;
+    // Uploaded video file takes priority; fallback to YouTube URL from body
+    const finalVideoUrl = req.file?.path || videoUrl || '';
 
     const lesson = await Lesson.create({
       courseId,
       title,
-      content,
-      videoUrl,
-      duration,
-      order: order || (await Lesson.countDocuments({ courseId })) + 1,
+      type: type || 'article',
+      content: content || '',
+      videoUrl: finalVideoUrl,
+      coverImage: '', // set separately via PATCH /lessons/:id/cover
+      duration: duration || '',
+      order: order ? Number(order) : (await Lesson.countDocuments({ courseId })) + 1,
       status: 'active',
     });
 
@@ -185,11 +192,21 @@ export const createLesson = async (req, res) => {
 export const updateLesson = async (req, res) => {
   try {
     const { lessonId } = req.params;
-    const { title, content, videoUrl, duration, order, status } = req.body;
+    const { title, type, content, videoUrl, duration, order, status } = req.body;
+    // Uploaded video file takes priority; fallback to URL from body
+    const finalVideoUrl = req.file?.path || videoUrl || '';
+
+    const updateFields = {
+      title, type, content,
+      videoUrl: finalVideoUrl,
+      duration: duration || '',
+      order: order ? Number(order) : undefined,
+      status,
+    };
 
     const lesson = await Lesson.findByIdAndUpdate(
       lessonId,
-      { title, content, videoUrl, duration, order, status },
+      updateFields,
       { new: true, runValidators: true }
     );
 
@@ -226,6 +243,67 @@ export const deleteLesson = async (req, res) => {
     });
   } catch (error) {
     console.error('Delete lesson error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const addLessonPdf = async (req, res) => {
+  try {
+    const { lessonId } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(lessonId)) {
+      return res.status(400).json({ success: false, message: 'Invalid lesson ID' });
+    }
+
+    const lesson = await Lesson.findById(lessonId);
+    if (!lesson) {
+      return res.status(404).json({ success: false, message: 'Lesson not found' });
+    }
+    lesson.pdfUrl = req.file.path;
+    lesson.pdfPublicId = req.file.filename || '';
+    await lesson.save();
+    res.json({ success: true, lesson });
+  } catch (error) {
+    console.error('Add lesson PDF error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const updateLessonCover = async (req, res) => {
+  try {
+    const { lessonId } = req.params;
+    console.log('Cover upload hit');
+    console.log('Lesson ID:', lessonId);
+    console.log('User:', req.user?._id, req.user?.role);
+    console.log('File:', req.file);
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(lessonId)) {
+      return res.status(400).json({ success: false, message: 'Invalid lesson ID' });
+    }
+
+    const coverImage = req.file.path;
+
+    const lesson = await Lesson.findByIdAndUpdate(
+      lessonId,
+      { coverImage },
+      { new: true }
+    );
+
+    if (!lesson) {
+      return res.status(404).json({ success: false, message: 'Lesson not found' });
+    }
+
+    res.json({ success: true, lesson });
+  } catch (error) {
+    console.error('Update lesson cover error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
