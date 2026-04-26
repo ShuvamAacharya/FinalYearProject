@@ -18,8 +18,8 @@ const courseSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      required: [true, 'Please add a category'],
-      enum: ['Web Development', 'Mobile Development', 'Data Science', 'Design', 'Business', 'Other'],
+      default: 'General',
+      enum: ['General', 'Programming', 'Data Science', 'Web Development', 'Mobile', 'DevOps', 'Design', 'Business', 'Other'],
     },
     level: {
       type: String,
@@ -28,7 +28,11 @@ const courseSchema = new mongoose.Schema(
     },
     thumbnail: {
       type: String,
-      default: 'https://via.placeholder.com/400x300?text=Course+Thumbnail',
+      default: '',
+    },
+    totalLessons: {
+      type: Number,
+      default: 0,
     },
     status: {
       type: String,
