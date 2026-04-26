@@ -66,15 +66,15 @@ export const getTeacherCourses = async (req, res) => {
 // @access  Private (Teacher)
 export const createCourse = async (req, res) => {
   try {
-    const { title, description, category, level, duration, price, thumbnail } = req.body;
+    const { title, description, category, level, duration } = req.body;
+    const thumbnail = req.file?.path || ''; // Cloudinary secure_url
 
     const course = await Course.create({
       title,
       description,
-      category,
-      level,
+      category: category || 'General',
+      level: level || 'beginner',
       duration,
-      price: price || 0,
       thumbnail,
       teacher: req.user.id,
       status: 'pending',
