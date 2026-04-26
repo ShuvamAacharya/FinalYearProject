@@ -1,130 +1,3 @@
-// // // import mongoose from 'mongoose';
-
-// // // const lessonSchema = new mongoose.Schema({
-// // //   title: {
-// // //     type: String,
-// // //     required: true,
-// // //   },
-// // //   content: String,
-// // //   videoUrl: String,
-// // //   duration: Number, // in minutes
-// // //   order: {
-// // //     type: Number,
-// // //     required: true,
-// // //   },
-// // //   courseId: {
-// // //     type: mongoose.Schema.Types.ObjectId,
-// // //     ref: 'Course',
-// // //     required: true,
-// // //   },
-// // // }, { timestamps: true });
-
-// // // export default mongoose.model('Lesson', lessonSchema);
-
-
-
-// // import mongoose from 'mongoose';
-
-// // const lessonSchema = new mongoose.Schema(
-// //   {
-// //     courseId: {
-// //       type: mongoose.Schema.Types.ObjectId,
-// //       ref: 'Course',
-// //       required: true,
-// //       index: true,
-// //     },
-// //     title: {
-// //       type: String,
-// //       required: true,
-// //       trim: true,
-// //     },
-// //     content: {
-// //       type: String,
-// //       required: true,
-// //     },
-// //     videoUrl: {
-// //       type: String,
-// //       default: '',
-// //     },
-// //     order: {
-// //       type: Number,
-// //       required: true,
-// //       default: 1,
-// //     },
-// //     duration: {
-// //       type: Number, // in minutes
-// //       default: 10,
-// //     },
-// //     status: {
-// //       type: String,
-// //       enum: ['active', 'draft'],
-// //       default: 'active',
-// //     },
-// //   },
-// //   {
-// //     timestamps: true,
-// //   }
-// // );
-
-// // // Index for faster queries
-// // lessonSchema.index({ courseId: 1, order: 1 });
-
-// // const Lesson = mongoose.model('Lesson', lessonSchema);
-
-// // export default Lesson;
-
-
-// import mongoose from 'mongoose';
-
-// const lessonSchema = new mongoose.Schema(
-//   {
-//     courseId: {
-//       type: mongoose.Schema.Types.ObjectId,
-//       ref: 'Course',
-//       required: true,
-//       index: true,
-//     },
-//     title: {
-//       type: String,
-//       required: true,
-//       trim: true,
-//     },
-//     content: {
-//       type: String,
-//       required: true,
-//     },
-//     videoUrl: {
-//       type: String,
-//       default: '',
-//     },
-//     order: {
-//       type: Number,
-//       required: true,
-//       default: 1,
-//     },
-//     duration: {
-//       type: Number, // in minutes
-//       default: 10,
-//     },
-//     status: {
-//       type: String,
-//       enum: ['active', 'draft'],
-//       default: 'active',
-//     },
-//   },
-//   {
-//     timestamps: true,
-//   }
-// );
-
-// // Index for faster queries
-// lessonSchema.index({ courseId: 1, order: 1 });
-
-// const Lesson = mongoose.model('Lesson', lessonSchema);
-
-// export default Lesson;
-
-
 import mongoose from 'mongoose';
 
 const lessonSchema = new mongoose.Schema(
@@ -138,20 +11,38 @@ const lessonSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    type: {
+      type: String,
+      enum: ['video', 'article', 'mixed'],
+      default: 'article',
+    },
     content: {
       type: String,
-      required: true,
+      default: '',
     },
     videoUrl: {
       type: String,
+      default: '',
+    },
+    coverImage: {
+      type: String,
+      default: '',
     },
     duration: {
-      type: Number, // in minutes
-      required: true,
+      type: String,
+      default: '',
     },
     order: {
       type: Number,
-      required: true,
+      default: 0,
+    },
+    pdfUrl: {
+      type: String,
+      default: '',
+    },
+    pdfPublicId: {
+      type: String,
+      default: '',
     },
     status: {
       type: String,
