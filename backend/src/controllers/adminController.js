@@ -3,6 +3,8 @@ import Course from '../models/Course.js';
 import Enrollment from '../models/Enrollment.js';
 import Activity from '../models/Activity.js';
 import Quiz from '../models/Quiz.js';
+import Lesson from '../models/Lesson.js';
+import QuizAttempt from '../models/QuizAttempt.js';
 
 export const getAdminDashboard = async (req, res) => {
   try {
@@ -177,6 +179,114 @@ export const getPendingQuizzes = async (req, res) => {
     res.json({ success: true, count: quizzes.length, quizzes });
   } catch (error) {
     console.error('getPendingQuizzes error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({ role: { $in: ['student', 'teacher'] } })
+      .select('-password')
+      .sort({ createdAt: -1 });
+    res.json({ success: true, users });
+  } catch (error) {
+    console.error('getAllUsers error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const toggleBlockUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (user.role === 'admin') return res.status(400).json({ success: false, message: 'Cannot block admin' });
+    user.isBlocked = !user.isBlocked;
+    await user.save();
+    res.json({
+      success: true,
+      isBlocked: user.isBlocked,
+      message: user.isBlocked ? 'User blocked' : 'User unblocked',
+    });
+  } catch (error) {
+    console.error('toggleBlockUser error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (user.role === 'admin') return res.status(400).json({ success: false, message: 'Cannot delete admin' });
+
+    await Enrollment.deleteMany({ student: user._id });
+    await QuizAttempt.deleteMany({ studentId: user._id });
+
+    if (user.role === 'teacher') {
+      const courses = await Course.find({ teacher: user._id });
+      const courseIds = courses.map((c) => c._id);
+      await Lesson.deleteMany({ courseId: { $in: courseIds } });
+      await Quiz.deleteMany({ course: { $in: courseIds } });
+      await QuizAttempt.deleteMany({ courseId: { $in: courseIds } });
+      await Enrollment.deleteMany({ course: { $in: courseIds } });
+      await Course.deleteMany({ teacher: user._id });
+    }
+
+    await User.findByIdAndDelete(req.params.userId);
+    res.json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('deleteUser error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const removeEnrollment = async (req, res) => {
+  try {
+    const { studentId, courseId } = req.params;
+    await Enrollment.findOneAndDelete({ student: studentId, course: courseId });
+    res.json({ success: true, message: 'Student removed from course' });
+  } catch (error) {
+    console.error('removeEnrollment error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const adminDeleteCourse = async (req, res) => {
+  try {
+    const course = await Course.findById(req.params.courseId);
+    if (!course) return res.status(404).json({ success: false, message: 'Course not found' });
+    await Lesson.deleteMany({ courseId: course._id });
+    await Quiz.deleteMany({ course: course._id });
+    await QuizAttempt.deleteMany({ courseId: course._id });
+    await Enrollment.deleteMany({ course: course._id });
+    await Course.findByIdAndDelete(req.params.courseId);
+    res.json({ success: true, message: 'Course deleted successfully' });
+  } catch (error) {
+    console.error('adminDeleteCourse error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const adminDeleteQuiz = async (req, res) => {
+  try {
+    await QuizAttempt.deleteMany({ quizId: req.params.quizId });
+    await Quiz.findByIdAndDelete(req.params.quizId);
+    res.json({ success: true, message: 'Quiz deleted successfully' });
+  } catch (error) {
+    console.error('adminDeleteQuiz error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const getAllEnrollments = async (req, res) => {
+  try {
+    const enrollments = await Enrollment.find({ status: 'approved' })
+      .populate('student', 'name email avatar')
+      .populate('course', 'title category')
+      .sort({ enrolledAt: -1 });
+    res.json({ success: true, enrollments });
+  } catch (error) {
+    console.error('getAllEnrollments error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
