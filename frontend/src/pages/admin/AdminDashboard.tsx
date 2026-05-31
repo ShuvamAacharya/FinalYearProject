@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from '../../api/axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
+import ProfileDropdown from '../../components/common/ProfileDropdown';
 
 const BG       = '#0f1117';
 const CARD     = '#1a1d27';
@@ -18,22 +19,12 @@ const DarkHeader = ({ user, onLogout }: { user: any; onLogout: () => void }) => 
         </div>
         <span className="text-white font-semibold text-base">EduCity</span>
       </div>
-      <div className="flex items-center gap-3">
-        <span className="text-gray-300 text-sm font-medium hidden sm:inline">{user?.name}</span>
-        <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
-          style={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}>
-          Admin
-        </span>
-        <button
-          onClick={onLogout}
-          className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors duration-150"
-          style={{ border: '1px solid rgba(239,68,68,0.4)', color: '#f87171' }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-        >
-          Logout
-        </button>
-      </div>
+      {user && (
+        <ProfileDropdown
+          user={{ name: user.name, role: user.role, email: user.email }}
+          onLogout={onLogout}
+        />
+      )}
     </div>
   </header>
 );
@@ -69,6 +60,8 @@ const AdminDashboard = () => {
     );
   }
 
+  const pendingInstructors = stats?.pendingInstructorRequests ?? 0;
+
   const statCards = [
     { label: 'Total Students',    value: stats?.totalStudents    || 0, color: '#4ade80', icon: '👨‍🎓' },
     { label: 'Total Teachers',    value: stats?.totalTeachers    || 0, color: '#60a5fa', icon: '👨‍🏫' },
@@ -80,12 +73,12 @@ const AdminDashboard = () => {
 
   const actionCards = [
     {
-      to: '/admin/enroll-student',
+      to: '/admin/enrollment-requests',
       icon: '👥',
       iconBg: 'rgba(59,130,246,0.15)',
       iconColor: '#60a5fa',
-      title: 'Enroll Student',
-      desc: 'Add students to courses',
+      title: 'Enrollment Requests',
+      desc: 'Approve student course enrollments',
     },
     {
       to: '/admin/course-approvals',
@@ -111,6 +104,14 @@ const AdminDashboard = () => {
       title: 'Instructor Eligibility',
       desc: 'Promote eligible students',
     },
+    {
+      to: '/admin/payments',
+      icon: '💳',
+      iconBg: 'rgba(251,191,36,0.15)',
+      iconColor: '#fbbf24',
+      title: 'Payment Logs',
+      desc: 'View all transactions and revenue',
+    },
   ];
 
   return (
@@ -125,6 +126,37 @@ const AdminDashboard = () => {
           <p className="text-gray-400 text-sm mt-1">Platform overview and management tools</p>
         </div>
 
+        {/* Pending instructor requests — prominent */}
+        {pendingInstructors > 0 && (
+          <Link
+            to="/admin/instructor-eligibility"
+            className="block rounded-2xl p-5 mb-6 transition-all"
+            style={{
+              background: 'linear-gradient(135deg, rgba(139,92,246,0.2), rgba(168,85,247,0.1))',
+              border: '2px solid rgba(168,85,247,0.5)',
+              boxShadow: '0 0 24px rgba(139,92,246,0.2)',
+            }}
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <span className="text-3xl">🎓</span>
+                <div>
+                  <p className="text-purple-300 text-xs font-bold uppercase tracking-wide">Action needed</p>
+                  <p className="text-white font-bold text-lg">
+                    Pending instructor requests: {pendingInstructors}
+                  </p>
+                  <p className="text-gray-400 text-sm mt-0.5">
+                    Students met quiz performance criteria — review and promote
+                  </p>
+                </div>
+              </div>
+              <span className="shrink-0 px-4 py-2 rounded-xl bg-purple-500 text-white text-sm font-semibold">
+                Review →
+              </span>
+            </div>
+          </Link>
+        )}
+
         {/* Stats grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
           {statCards.map((s) => (
@@ -136,6 +168,20 @@ const AdminDashboard = () => {
               <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
             </div>
           ))}
+          <Link
+            to="/admin/instructor-eligibility"
+            className="rounded-xl p-5 transition-colors hover:border-purple-500/50"
+            style={{ backgroundColor: CARD, border: `1px solid ${pendingInstructors > 0 ? 'rgba(168,85,247,0.5)' : BORDER}` }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-gray-400 text-xs font-medium">Instructor Requests</p>
+              <span className="text-2xl">🎓</span>
+            </div>
+            <p className="text-2xl font-bold text-purple-400">{pendingInstructors}</p>
+            {pendingInstructors > 0 && (
+              <p className="text-purple-400/80 text-xs mt-1 font-medium">Tap to review →</p>
+            )}
+          </Link>
         </div>
 
         {/* Quick Actions */}

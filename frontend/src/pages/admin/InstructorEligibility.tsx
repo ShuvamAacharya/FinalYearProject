@@ -21,7 +21,12 @@ interface Student {
 const InstructorEligibility = () => {
   const [eligibleStudents, setEligibleStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    action: 'promote' | 'reject' | null;
+    studentId: string | null;
+    studentName: string | null;
+  }>({ isOpen: false, action: null, studentId: null, studentName: null });
 
   useEffect(() => {
     fetchEligibleStudents();
@@ -39,26 +44,27 @@ const InstructorEligibility = () => {
   };
 
   const handlePromote = async (userId: string, studentName: string) => {
-    if (!confirm(`Promote ${studentName} to instructor?`)) return;
-
-    try {
-      await axios.put(`/admin/promote-instructor/${userId}`);
-      toast.success(`${studentName} has been promoted to instructor!`);
-      fetchEligibleStudents();
-      setSelectedStudent(null);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Promotion failed');
-    }
+    setConfirmModal({ isOpen: true, action: 'promote', studentId: userId, studentName });
   };
 
   const handleReject = async (userId: string, studentName: string) => {
-    if (!confirm(`Reject ${studentName}'s instructor eligibility?`)) return;
+    setConfirmModal({ isOpen: true, action: 'reject', studentId: userId, studentName });
+  };
+
+  const confirmAction = async () => {
+    const { action, studentId, studentName } = confirmModal;
+    if (!action || !studentId || !studentName) return;
 
     try {
-      await axios.put(`/admin/reject-instructor/${userId}`);
-      toast.success('Eligibility rejected');
+      if (action === 'promote') {
+        await axios.put(`/admin/promote-instructor/${studentId}`);
+        toast.success(`${studentName} has been promoted to instructor!`);
+      } else if (action === 'reject') {
+        await axios.put(`/admin/reject-instructor/${studentId}`);
+        toast.success('Eligibility rejected');
+      }
       fetchEligibleStudents();
-      setSelectedStudent(null);
+      setConfirmModal({ isOpen: false, action: null, studentId: null, studentName: null });
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Action failed');
     }
@@ -175,6 +181,9 @@ const InstructorEligibility = () => {
                       Total Points
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Joined
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Actions
                     </th>
                   </tr>
@@ -228,6 +237,9 @@ const InstructorEligibility = () => {
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
                         {student.performanceMetrics.totalPointsEarned}
                       </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {new Date(student.createdAt).toLocaleDateString()}
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
                           <button
@@ -280,6 +292,42 @@ const InstructorEligibility = () => {
             </div>
           </div>
         </div>
+
+        {/* Confirmation Modal */}
+        {confirmModal.isOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-lg max-w-sm w-full p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">
+                {confirmModal.action === 'promote'
+                  ? `Promote ${confirmModal.studentName} to Instructor?`
+                  : `Reject ${confirmModal.studentName}'s Eligibility?`}
+              </h3>
+              <p className="text-gray-600 text-sm mb-6">
+                {confirmModal.action === 'promote'
+                  ? `${confirmModal.studentName} will be promoted to instructor status and can start creating courses.`
+                  : `${confirmModal.studentName}'s instructor eligibility will be revoked. They can reapply after improving their performance.`}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmModal({ isOpen: false, action: null, studentId: null, studentName: null })}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmAction}
+                  className={`flex-1 px-4 py-2 text-white rounded-lg transition text-sm font-medium ${
+                    confirmModal.action === 'promote'
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : 'bg-red-600 hover:bg-red-700'
+                  }`}
+                >
+                  {confirmModal.action === 'promote' ? 'Promote' : 'Reject'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
