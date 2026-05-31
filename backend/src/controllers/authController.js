@@ -154,7 +154,10 @@ export const getMe = async (req, res) => {
         role: user.role,
         avatar: user.avatar,
         instructorEligible: user.instructorEligible,
+        instructorApproved: user.instructorApproved,
+        promotedToInstructorAt: user.promotedToInstructorAt,
         performanceMetrics: user.performanceMetrics,
+        createdAt: user.createdAt,
       }
     });
   } catch (error) {

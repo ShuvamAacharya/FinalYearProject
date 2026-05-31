@@ -123,7 +123,11 @@ export const enrollCourse = async (req, res) => {
       metadata: { courseId },
     });
 
-    res.status(201).json({ success: true, message: 'Successfully enrolled in course', enrollment });
+    res.status(201).json({
+      success: true,
+      message: 'Enrollment request submitted. Awaiting admin approval.',
+      enrollment,
+    });
   } catch (error) {
     console.error('Enroll course error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -197,6 +201,20 @@ export const submitQuiz = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied. Enrollment not approved.' });
     }
 
+    // Gate: course quizzes can only be submitted after all lessons are complete
+    if (quiz.course) {
+      const totalLessons = await Lesson.countDocuments({ courseId: quiz.course, status: 'active' });
+      const completedLessons = await LessonProgress.countDocuments({
+        studentId,
+        courseId: quiz.course,
+        completed: true,
+      });
+      const allLessonsCompleted = totalLessons > 0 && completedLessons >= totalLessons;
+      if (!allLessonsCompleted) {
+        return res.status(403).json({ success: false, message: 'Complete all lessons before taking the quiz' });
+      }
+    }
+
     const existingAttempt = await QuizAttempt.findOne({ studentId, quizId });
     if (existingAttempt) {
       return res.status(400).json({ success: false, message: 'You have already attempted this quiz' });
@@ -212,7 +230,8 @@ export const submitQuiz = async (req, res) => {
 
     const percentage = Math.round((correctAnswers / totalPoints) * 100);
     const passed = percentage >= 70;
-    const completionTime = Math.floor((new Date(endTime) - new Date(startTime)) / 1000);
+    const rawTime = Math.floor((new Date(endTime) - new Date(startTime)) / 1000);
+    const completionTime = Number.isFinite(rawTime) ? rawTime : 0;
 
     await QuizAttempt.create({
       studentId,
@@ -262,6 +281,14 @@ export const submitQuiz = async (req, res) => {
       metadata: { quizId, score: percentage, passed },
     });
 
+    const review = quiz.questions.map((q, i) => ({
+      question: q.question,
+      options: q.options,
+      userAnswer: answers[i] ?? -1,
+      correctAnswer: q.correctAnswer,
+      isCorrect: answers[i] === q.correctAnswer,
+    }));
+
     res.json({
       success: true,
       message: passed
@@ -273,6 +300,7 @@ export const submitQuiz = async (req, res) => {
       certificate: certificate
         ? { certificateNumber: certificate.certificateNumber, pdfPath: certificate.pdfPath }
         : null,
+      review,
     });
   } catch (error) {
     console.error('Submit quiz error:', error);

@@ -99,8 +99,8 @@ export const createCourse = async (req, res) => {
 // @access  Private (Teacher)
 export const getTeacherQuizzes = async (req, res) => {
   try {
-    const quizzes = await Quiz.find({ teacherId: req.user.id })
-      .populate('courseId', 'title')
+    const quizzes = await Quiz.find({ teacher: req.user.id })
+      .populate('course', 'title')
       .sort({ createdAt: -1 });
 
     res.json({ success: true, quizzes });
@@ -115,16 +115,19 @@ export const getTeacherQuizzes = async (req, res) => {
 // @access  Private (Teacher)
 export const createQuiz = async (req, res) => {
   try {
-    const { courseId, title, questions, duration, passingScore } = req.body;
+    const { courseId, title, questions, duration, passingScore, isGeneral, category, creditPoints, difficulty } = req.body;
 
-    const course = await Course.findById(courseId);
-
-    if (!course) {
-      return res.status(404).json({ success: false, message: 'Course not found' });
-    }
-
-    if (course.teacher.toString() !== req.user.id) {
-      return res.status(403).json({ success: false, message: 'Not authorized' });
+    if (!isGeneral) {
+      if (!courseId) {
+        return res.status(400).json({ success: false, message: 'Course is required for course quizzes' });
+      }
+      const course = await Course.findById(courseId);
+      if (!course) {
+        return res.status(404).json({ success: false, message: 'Course not found' });
+      }
+      if (course.teacher.toString() !== req.user.id) {
+        return res.status(403).json({ success: false, message: 'Not authorized' });
+      }
     }
 
     if (!questions || questions.length === 0) {
@@ -133,11 +136,15 @@ export const createQuiz = async (req, res) => {
 
     const quiz = await Quiz.create({
       title,
-      courseId,
-      teacherId: req.user.id,
+      course: isGeneral ? null : courseId,
+      teacher: req.user.id,
       questions,
-      duration,
-      passingScore: passingScore || 70,
+      duration: duration || 15,
+      passingScore: passingScore || 60,
+      isGeneral: isGeneral || false,
+      category: category || 'General',
+      creditPoints: creditPoints || 10,
+      difficulty: difficulty || 'Easy',
       status: 'pending',
     });
 

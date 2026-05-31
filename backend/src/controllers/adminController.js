@@ -14,6 +14,12 @@ export const getAdminDashboard = async (req, res) => {
     const approvedCourses = await Course.countDocuments({ status: 'approved' });
     const pendingCourses = await Course.countDocuments({ status: 'pending' });
     const totalEnrollments = await Enrollment.countDocuments();
+    const pendingEnrollments = await Enrollment.countDocuments({ status: 'pending' });
+    const pendingInstructorRequests = await User.countDocuments({
+      role: 'student',
+      instructorEligible: true,
+      instructorApproved: false,
+    });
 
     res.json({
       success: true,
@@ -24,6 +30,8 @@ export const getAdminDashboard = async (req, res) => {
         approvedCourses,
         pendingCourses,
         totalEnrollments,
+        pendingEnrollments,
+        pendingInstructorRequests,
       },
     });
   } catch (error) {
@@ -32,44 +40,87 @@ export const getAdminDashboard = async (req, res) => {
   }
 };
 
-export const enrollStudentInCourse = async (req, res) => {
+export const getPendingEnrollments = async (req, res) => {
   try {
-    const { studentId, courseId } = req.body;
+    const enrollments = await Enrollment.find({ status: 'pending' })
+      .populate('student', 'name email')
+      .populate({ path: 'course', select: 'title category teacher', populate: { path: 'teacher', select: 'name' } })
+      .sort({ createdAt: -1 });
 
-    const student = await User.findById(studentId);
-    const course = await Course.findById(courseId);
-
-    if (!student) {
-      return res.status(404).json({ success: false, message: 'Student not found' });
-    }
-
-    if (!course) {
-      return res.status(404).json({ success: false, message: 'Course not found' });
-    }
-
-    const existingEnrollment = await Enrollment.findOne({ student: studentId, course: courseId });
-    if (existingEnrollment) {
-      return res.status(400).json({ success: false, message: 'Student already enrolled' });
-    }
-
-    const enrollment = await Enrollment.create({
-      student: studentId,
-      course: courseId,
-      status: 'approved',
-      progress: 0,
-      enrolledAt: new Date(),
-    });
-
-    await Activity.create({
-      userId: req.user.id,
-      activityType: 'course_enrolled',
-      description: `Admin enrolled ${student.name} in ${course.title}`,
-      metadata: { studentId, courseId },
-    });
-
-    res.status(201).json({ success: true, message: 'Student enrolled successfully', enrollment });
+    res.json({ success: true, enrollments });
   } catch (error) {
-    console.error('Admin enroll student error:', error);
+    console.error('getPendingEnrollments error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const approveEnrollment = async (req, res) => {
+  try {
+    const enrollment = await Enrollment.findById(req.params.id)
+      .populate('student', 'name email')
+      .populate('course', 'title');
+
+    if (!enrollment) {
+      return res.status(404).json({ success: false, message: 'Enrollment request not found' });
+    }
+
+    if (enrollment.status !== 'pending') {
+      return res.status(400).json({ success: false, message: 'Only pending requests can be approved' });
+    }
+
+    enrollment.status = 'approved';
+    enrollment.enrolledAt = new Date();
+    await enrollment.save();
+
+    try {
+      await Activity.create({
+        userId: req.user.id,
+        activityType: 'enrollment_approved',
+        description: `Admin approved enrollment for ${enrollment.student?.name} in ${enrollment.course?.title}`,
+        metadata: { enrollmentId: enrollment._id, studentId: enrollment.student?._id, courseId: enrollment.course?._id },
+      });
+    } catch (activityErr) {
+      console.error('Activity log failed (non-critical):', activityErr);
+    }
+
+    res.json({ success: true, message: 'Enrollment approved', enrollment });
+  } catch (error) {
+    console.error('approveEnrollment error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const rejectEnrollment = async (req, res) => {
+  try {
+    const enrollment = await Enrollment.findById(req.params.id)
+      .populate('student', 'name email')
+      .populate('course', 'title');
+
+    if (!enrollment) {
+      return res.status(404).json({ success: false, message: 'Enrollment request not found' });
+    }
+
+    if (enrollment.status !== 'pending') {
+      return res.status(400).json({ success: false, message: 'Only pending requests can be rejected' });
+    }
+
+    enrollment.status = 'rejected';
+    await enrollment.save();
+
+    try {
+      await Activity.create({
+        userId: req.user.id,
+        activityType: 'enrollment_rejected',
+        description: `Admin rejected enrollment for ${enrollment.student?.name} in ${enrollment.course?.title}`,
+        metadata: { enrollmentId: enrollment._id, studentId: enrollment.student?._id, courseId: enrollment.course?._id },
+      });
+    } catch (activityErr) {
+      console.error('Activity log failed (non-critical):', activityErr);
+    }
+
+    res.json({ success: true, message: 'Enrollment rejected', enrollment });
+  } catch (error) {
+    console.error('rejectEnrollment error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
@@ -155,12 +206,16 @@ export const approveCourse = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Course not found' });
     }
 
-    await Activity.create({
-      userId: req.user.id,
-      activityType: status === 'approved' ? 'course_approved' : 'course_rejected',
-      description: `${status === 'approved' ? 'Approved' : 'Rejected'} course: ${course.title}`,
-      metadata: { courseId, teacherId: course.teacher._id },
-    });
+    try {
+      await Activity.create({
+        userId: req.user.id,
+        activityType: status === 'approved' ? 'course_approved' : 'course_rejected',
+        description: `${status === 'approved' ? 'Approved' : 'Rejected'} course: ${course.title}`,
+        metadata: { courseId, teacherId: course.teacher?._id },
+      });
+    } catch (activityErr) {
+      console.error('Activity log failed (non-critical):', activityErr);
+    }
 
     res.json({ success: true, message: `Course ${status} successfully`, course });
   } catch (error) {
@@ -312,12 +367,16 @@ export const approveQuiz = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Quiz not found' });
     }
 
-    await Activity.create({
-      userId: req.user.id,
-      activityType: status === 'approved' ? 'quiz_approved' : 'quiz_rejected',
-      description: `${status === 'approved' ? 'Approved' : 'Rejected'} quiz: ${quiz.title}`,
-      metadata: { quizId, teacherId: quiz.teacher._id },
-    });
+    try {
+      await Activity.create({
+        userId: req.user.id,
+        activityType: status === 'approved' ? 'quiz_approved' : 'quiz_rejected',
+        description: `${status === 'approved' ? 'Approved' : 'Rejected'} quiz: ${quiz.title}`,
+        metadata: { quizId, teacherId: quiz.teacher?._id },
+      });
+    } catch (activityErr) {
+      console.error('Activity log failed (non-critical):', activityErr);
+    }
 
     res.json({ success: true, message: `Quiz ${status} successfully`, quiz });
   } catch (error) {
