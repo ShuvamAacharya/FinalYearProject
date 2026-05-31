@@ -63,6 +63,7 @@ const CreateCourse = () => {
   const [category, setCategory]       = useState('General');
   const [level, setLevel]             = useState('beginner');
   const [duration, setDuration]       = useState('');
+  const [price, setPrice]             = useState(0);
   const [thumbFile, setThumbFile]     = useState<File | null>(null);
   const [thumbPreview, setThumbPreview] = useState('');
 
@@ -87,6 +88,7 @@ const CreateCourse = () => {
       fd.append('category', category);
       fd.append('level', level);
       fd.append('duration', duration);
+      fd.append('price', String(price));
       if (thumbFile) fd.append('thumbnail', thumbFile);
 
       await axios.post('/teacher/courses', fd);
@@ -219,6 +221,28 @@ const CreateCourse = () => {
                 placeholder="e.g., 10"
                 min="1"
               />
+            </div>
+
+            {/* Price */}
+            <div>
+              {fieldLabel('Course Price (NPR)')}
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none">Rs.</span>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="0 for free course"
+                  value={price}
+                  onChange={(e) => setPrice(Number(e.target.value))}
+                  className={`${inputCls} pl-10`}
+                  style={inputStyle}
+                />
+              </div>
+              {price === 0 ? (
+                <p className="text-green-400 text-xs mt-1">✓ This will be a free course</p>
+              ) : (
+                <p className="text-blue-400 text-xs mt-1">Students will pay Rs. {price} via eSewa</p>
+              )}
             </div>
 
             {/* Actions */}

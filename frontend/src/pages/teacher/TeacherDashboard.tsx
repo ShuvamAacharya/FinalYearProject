@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from '../../api/axios';
 import { useAuthStore } from '../../store/authStore';
+import ProfileDropdown from '../../components/common/ProfileDropdown';
 
 const BG       = '#0f1117';
 const CARD     = '#1a1d27';
@@ -17,22 +18,12 @@ const DarkHeader = ({ user, onLogout }: { user: any; onLogout: () => void }) => 
         </div>
         <span className="text-white font-semibold text-base">EduCity</span>
       </div>
-      <div className="flex items-center gap-3">
-        <span className="text-gray-300 text-sm font-medium hidden sm:inline">{user?.name}</span>
-        <span className="text-xs font-semibold px-2.5 py-1 rounded-full capitalize"
-          style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>
-          Teacher
-        </span>
-        <button
-          onClick={onLogout}
-          className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors duration-150"
-          style={{ border: '1px solid rgba(239,68,68,0.4)', color: '#f87171' }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-        >
-          Logout
-        </button>
-      </div>
+      {user && (
+        <ProfileDropdown
+          user={{ name: user.name, role: user.role, email: user.email }}
+          onLogout={onLogout}
+        />
+      )}
     </div>
   </header>
 );
