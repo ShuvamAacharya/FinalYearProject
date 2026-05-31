@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from '../../api/axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
+import NotesSection from '../../components/NotesSection';
 
 const BG       = '#0f1117';
 const CARD     = '#1a1d27';
@@ -272,6 +273,14 @@ const LessonView = () => {
             </button>
           </div>
         )}
+
+        {/* Student notes */}
+        <div className="mt-8 mb-6">
+          <NotesSection
+            lessonId={lesson._id}
+            courseId={lesson.courseId}
+          />
+        </div>
 
         {/* Prev / Next navigation */}
         <div className="flex items-center justify-between gap-4">

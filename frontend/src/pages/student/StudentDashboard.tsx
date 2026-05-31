@@ -1,14 +1,41 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { BookOpen, Award, TrendingUp, Zap, ArrowRight } from 'lucide-react';
 import axios from '../../api/axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
+import ProfileDropdown from '../../components/common/ProfileDropdown';
+import InstructorEligibilityBanner from '../../components/instructor/InstructorEligibilityBanner';
+import MyNotes from '../../components/MyNotes';
 
 // ── Dark theme tokens ────────────────────────────────────────────────────────
 const BG      = '#0f1117';
 const CARD    = '#1a1d27';
 const ELEVATED = '#1f2937';
 const BORDER  = '#2d3748';
+
+// Count consecutive active days (ending today or yesterday) from a list of dates.
+const computeStreak = (dates: (string | undefined)[]): number => {
+  const days = new Set(
+    dates.filter(Boolean).map((d) => new Date(d as string).toISOString().slice(0, 10)),
+  );
+  if (days.size === 0) return 0;
+
+  const dayMs = 86400000;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = today.toISOString().slice(0, 10);
+  const yesterdayStr = new Date(today.getTime() - dayMs).toISOString().slice(0, 10);
+  if (!days.has(todayStr) && !days.has(yesterdayStr)) return 0;
+
+  let streak = 0;
+  let cursor = days.has(todayStr) ? today.getTime() : today.getTime() - dayMs;
+  while (days.has(new Date(cursor).toISOString().slice(0, 10))) {
+    streak += 1;
+    cursor -= dayMs;
+  }
+  return streak;
+};
 
 // ── Shared header ────────────────────────────────────────────────────────────
 const DarkHeader = ({ user, onLogout }: { user: any; onLogout: () => void }) => (
@@ -20,22 +47,12 @@ const DarkHeader = ({ user, onLogout }: { user: any; onLogout: () => void }) => 
         </div>
         <span className="text-white font-semibold text-base">EduCity</span>
       </div>
-      <div className="flex items-center gap-3">
-        <span className="text-gray-300 text-sm font-medium hidden sm:inline">{user?.name}</span>
-        <span className="text-xs font-semibold px-2.5 py-1 rounded-full capitalize"
-          style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>
-          {user?.role}
-        </span>
-        <button
-          onClick={onLogout}
-          className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors duration-150"
-          style={{ border: '1px solid rgba(239,68,68,0.4)', color: '#f87171', backgroundColor: 'transparent' }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-        >
-          Logout
-        </button>
-      </div>
+      {user && (
+        <ProfileDropdown
+          user={{ name: user.name, role: user.role, email: user.email }}
+          onLogout={onLogout}
+        />
+      )}
     </div>
   </header>
 );
@@ -46,9 +63,13 @@ const StudentDashboard = () => {
   const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'notice' | 'today' | 'upcoming'>('today');
+  const [activeTab, setActiveTab] = useState<'notice' | 'today' | 'upcoming' | 'notes'>('today');
   const [promotionRequested, setPromotionRequested] = useState(false);
   const [promotionLoading, setPromotionLoading] = useState(false);
+  const [certificatesEarned, setCertificatesEarned] = useState(0);
+  const [quizzesCompleted, setQuizzesCompleted] = useState(0);
+  const [currentStreak, setCurrentStreak] = useState(0);
+  const [recommended, setRecommended] = useState<any[]>([]);
 
   useEffect(() => { fetchDashboard(); }, []);
 
@@ -56,6 +77,7 @@ const StudentDashboard = () => {
     try {
       const { data } = await axios.get('/student/dashboard');
       setDashboardData(data);
+      void loadSecondaryStats(data);
     } catch {
       toast.error('Failed to load dashboard');
     } finally {
@@ -63,14 +85,45 @@ const StudentDashboard = () => {
     }
   };
 
+  // Secondary, non-blocking data for the stats cards and recommendations.
+  const loadSecondaryStats = async (dashboard: any) => {
+    const enrolledIds = new Set(
+      (dashboard?.enrollments || [])
+        .map((e: any) => e.courseId?._id || e.course?._id)
+        .filter(Boolean),
+    );
+
+    const [certsRes, quizRes, coursesRes] = await Promise.allSettled([
+      axios.get('/student/certificates'),
+      axios.get('/student/quiz-results'),
+      axios.get('/courses'),
+    ]);
+
+    if (certsRes.status === 'fulfilled') {
+      setCertificatesEarned(certsRes.value.data.certificates?.length ?? 0);
+    }
+
+    if (quizRes.status === 'fulfilled') {
+      const results = quizRes.value.data.results || [];
+      setQuizzesCompleted(quizRes.value.data.stats?.totalQuizzes ?? results.length);
+      setCurrentStreak(computeStreak(results.map((r: any) => r.submittedAt)));
+    }
+
+    if (coursesRes.status === 'fulfilled') {
+      const all = coursesRes.value.data.courses || coursesRes.value.data.data || [];
+      setRecommended(all.filter((c: any) => !enrolledIds.has(c._id)).slice(0, 3));
+    }
+  };
+
   const handleRequestPromotion = async () => {
     setPromotionLoading(true);
     try {
-      await axios.put('/student/request-promotion');
+      await axios.post('/student/request-promotion');
       setPromotionRequested(true);
       await fetchUser();
-      toast.success('Congratulations! You are now an Instructor!');
-      navigate('/teacher/dashboard');
+      toast.success('Instructor access requested! An admin will promote you from the eligibility panel.', {
+        duration: 6000,
+      });
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Promotion request failed');
     } finally {
@@ -106,39 +159,14 @@ const StudentDashboard = () => {
       <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Welcome */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className="text-2xl font-bold text-white">
             Hello, {user?.name?.split(' ')[0] || 'Student'} 👋
           </h1>
           <p className="text-gray-400 text-sm mt-1">Ready to continue your learning journey?</p>
         </div>
 
-        {/* Quick nav cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {[
-            { to: '/student/browse-courses',  icon: '📚', label: 'Browse Courses',  desc: 'Find and enroll in new courses' },
-            { to: '/student/certificates',    icon: '🏆', label: 'My Certificates', desc: 'Download your earned certs'    },
-            { to: '/student/quiz-results',    icon: '📊', label: 'Quiz History',    desc: 'Review your past attempts'     },
-            { to: '/student/quiz-results',    icon: '🎯', label: 'Test Yourself',   desc: 'Take available quizzes'        },
-          ].map((item) => (
-            <Link
-              key={item.label}
-              to={item.to}
-              className="flex items-center gap-4 p-4 rounded-xl transition-colors duration-150"
-              style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'rgba(34,197,94,0.4)')}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = BORDER)}
-            >
-              <span className="text-2xl">{item.icon}</span>
-              <div>
-                <p className="text-white text-sm font-semibold">{item.label}</p>
-                <p className="text-gray-500 text-xs mt-0.5">{item.desc}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-
-        {/* Become Instructor Banner */}
+        {/* Instructor eligibility — top priority for demo */}
         {user?.role === 'teacher' ? (
           <div className="rounded-xl p-5 mb-6 flex items-center gap-4"
             style={{ background: 'linear-gradient(to right, rgba(34,197,94,0.15), rgba(22,163,74,0.1))', border: '1px solid rgba(34,197,94,0.3)' }}>
@@ -148,25 +176,97 @@ const StudentDashboard = () => {
               <p className="text-green-600 text-sm">Create and manage courses from the Teacher Dashboard.</p>
             </div>
           </div>
-        ) : user?.instructorEligible ? (
-          <div className="rounded-xl p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-            style={{ background: 'linear-gradient(to right, rgba(34,197,94,0.12), rgba(16,185,129,0.08))', border: '1px solid rgba(34,197,94,0.3)' }}>
-            <div className="flex items-center gap-4">
-              <span className="text-2xl">🎓</span>
+        ) : user?.instructorEligible && user?.role === 'student' ? (
+          <InstructorEligibilityBanner
+            quizzesTaken={user.performanceMetrics?.totalQuizzesTaken ?? 0}
+            averageScore={Math.round(user.performanceMetrics?.averageScore ?? 0)}
+            onRequestPromotion={handleRequestPromotion}
+            promotionLoading={promotionLoading}
+            promotionRequested={promotionRequested}
+          />
+        ) : null}
+
+        {/* Credit points card */}
+        {(user?.performanceMetrics?.creditPoints ?? 0) > 0 && (
+          <div
+            className="rounded-xl p-5 mb-6 flex items-center justify-between"
+            style={{ background: 'linear-gradient(to right, rgba(234,179,8,0.15), rgba(234,179,8,0.05))', border: '1px solid rgba(234,179,8,0.3)' }}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">⭐</span>
               <div>
-                <p className="font-semibold text-green-400">🎓 You've mastered enough topics to become an instructor on EduCity!</p>
-                <p className="text-gray-400 text-sm">You've completed {user?.performanceMetrics?.totalQuizzesTaken} quizzes with an average score of {user?.performanceMetrics?.averageScore}%.</p>
+                <p className="text-yellow-400 font-bold text-2xl leading-none">{user?.performanceMetrics?.creditPoints}</p>
+                <p className="text-yellow-600 text-sm mt-0.5">Credit Points earned</p>
               </div>
             </div>
-            <button
-              onClick={handleRequestPromotion}
-              disabled={promotionLoading || promotionRequested}
-              className="shrink-0 rounded-lg px-5 py-2 text-sm font-semibold text-white bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            <Link
+              to="/student/test-yourself"
+              className="text-sm font-medium text-yellow-400 hover:text-yellow-300 transition-colors"
             >
-              {promotionRequested ? '✅ Promoted!' : promotionLoading ? 'Processing…' : 'Request Promotion'}
-            </button>
+              Earn more →
+            </Link>
           </div>
-        ) : null}
+        )}
+
+        {/* Stats cards — key metrics, each links to its detail page */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {[
+            {
+              to: '/student/browse-courses',
+              icon: <BookOpen size={22} className="text-blue-400" />,
+              iconBg: 'rgba(59,130,246,0.15)',
+              value: String(dashboardData?.stats?.totalEnrolled ?? enrollments.length),
+              label: 'Courses Enrolled',
+              hint: 'Keep learning',
+              hover: 'rgba(59,130,246,0.5)',
+            },
+            {
+              to: '/student/certificates',
+              icon: <Award size={22} className="text-green-400" />,
+              iconBg: 'rgba(34,197,94,0.15)',
+              value: String(certificatesEarned),
+              label: 'Certificates Earned',
+              hint: 'Showcase your skills',
+              hover: 'rgba(34,197,94,0.5)',
+            },
+            {
+              to: '/student/quiz-results',
+              icon: <TrendingUp size={22} className="text-purple-400" />,
+              iconBg: 'rgba(168,85,247,0.15)',
+              value: String(quizzesCompleted),
+              label: 'Quizzes Completed',
+              hint: 'Track progress',
+              hover: 'rgba(168,85,247,0.5)',
+            },
+            {
+              to: '/student/test-yourself',
+              icon: <Zap size={22} className="text-orange-400" />,
+              iconBg: 'rgba(249,115,22,0.15)',
+              value: `${currentStreak} ${currentStreak === 1 ? 'day' : 'days'}`,
+              label: 'Learning Streak',
+              hint: 'Keep it going! 🔥',
+              hover: 'rgba(249,115,22,0.5)',
+            },
+          ].map((s) => (
+            <Link
+              key={s.label}
+              to={s.to}
+              className="block p-5 rounded-xl transition-colors duration-150"
+              style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = s.hover)}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = BORDER)}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="p-2.5 rounded-lg inline-flex" style={{ backgroundColor: s.iconBg }}>
+                  {s.icon}
+                </span>
+                <span className="text-2xl font-bold text-white">{s.value}</span>
+              </div>
+              <p className="text-gray-300 text-sm font-medium">{s.label}</p>
+              <p className="text-gray-500 text-xs mt-0.5">{s.hint}</p>
+            </Link>
+          ))}
+        </div>
 
         {/* Knowledge Journey */}
         {(() => {
@@ -206,12 +306,56 @@ const StudentDashboard = () => {
           );
         })()}
 
+        {/* Recommended courses */}
+        {recommended.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-white">Recommended For You</h2>
+              <Link to="/student/browse-courses" className="text-sm text-green-400 hover:text-green-300 transition-colors">
+                View all →
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recommended.map((c: any) => (
+                <Link
+                  key={c._id}
+                  to="/student/browse-courses"
+                  className="rounded-xl overflow-hidden transition-colors duration-150 group"
+                  style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'rgba(168,85,247,0.5)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = BORDER)}
+                >
+                  <div className="h-28 flex items-center justify-center text-3xl text-white overflow-hidden"
+                    style={{ background: 'linear-gradient(135deg, #6d28d9, #db2777)' }}>
+                    {c.thumbnail
+                      ? <img src={c.thumbnail} alt={c.title} className="w-full h-full object-cover" />
+                      : (c.title?.charAt(0) || '📘')}
+                  </div>
+                  <div className="p-4">
+                    <span className="text-xs text-gray-500 uppercase tracking-wide">{c.category || 'General'}</span>
+                    <h3 className="text-white font-semibold text-sm mt-1 line-clamp-2">{c.title}</h3>
+                    <p className="text-gray-500 text-xs mt-1 line-clamp-2">{c.description}</p>
+                    <span className="inline-flex items-center gap-1 text-sm text-green-400 mt-3 group-hover:gap-2 transition-all">
+                      Explore <ArrowRight size={14} />
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Tabbed section */}
         <div className="rounded-xl overflow-hidden" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
           {/* Tab bar */}
           <div className="flex px-6" style={{ borderBottom: `1px solid ${BORDER}` }}>
-            {(['notice', 'today', 'upcoming'] as const).map((tab) => {
-              const labels = { notice: 'Notice Board', today: "Today's Tasks", upcoming: 'Upcoming Tasks' };
+            {(['notice', 'today', 'upcoming', 'notes'] as const).map((tab) => {
+              const labels = {
+                notice: 'Notice Board',
+                today: "Today's Tasks",
+                upcoming: 'Upcoming Tasks',
+                notes: '📝 My Notes',
+              };
               const active = activeTab === tab;
               return (
                 <button key={tab} onClick={() => setActiveTab(tab)}
@@ -328,6 +472,8 @@ const StudentDashboard = () => {
                 )}
               </div>
             )}
+
+            {activeTab === 'notes' && <MyNotes />}
           </div>
         </div>
       </main>
