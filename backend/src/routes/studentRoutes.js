@@ -14,7 +14,6 @@ import {
   getCourseProgress,
 } from '../controllers/lessonController.js';
 import User from '../models/User.js';
-import { promoteToInstructor } from '../services/performanceService.js';
 
 const router = express.Router();
 
@@ -37,7 +36,7 @@ router.post('/quizzes/:quizId/submit', authMiddleware, submitQuiz);
 router.get('/quiz-results', authMiddleware, roleMiddleware('student'), getQuizResults);
 
 // Instructor promotion request (student self-service)
-router.put('/request-promotion', authMiddleware, roleMiddleware('student'), async (req, res) => {
+router.post('/request-promotion', authMiddleware, roleMiddleware('student'), async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user.instructorEligible) {
@@ -46,14 +45,26 @@ router.put('/request-promotion', authMiddleware, roleMiddleware('student'), asyn
         message: 'You are not yet eligible for instructor promotion',
       });
     }
-    const promoted = await promoteToInstructor(req.user.id, req.user.id);
+    if (user.role === 'teacher') {
+      return res.status(400).json({
+        success: false,
+        message: 'You are already an instructor',
+      });
+    }
     res.json({
       success: true,
-      message: 'Congratulations! You have been promoted to Instructor.',
-      user: promoted,
+      message: 'Promotion request submitted! Admin will review your request soon.',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        instructorEligible: user.instructorEligible,
+        performanceMetrics: user.performanceMetrics,
+      },
     });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 

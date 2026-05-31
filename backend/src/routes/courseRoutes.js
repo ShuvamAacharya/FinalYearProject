@@ -1,9 +1,10 @@
 import express from 'express';
-import authMiddleware from '../middleware/authMiddleware.js';
-import { getApprovedCourses } from '../controllers/courseController.js';
+import { getApprovedCourses, getCourseById } from '../controllers/courseController.js';
 
 const router = express.Router();
 
-router.get('/', authMiddleware, getApprovedCourses);
+// Public — no auth required
+router.get('/', getApprovedCourses);
+router.get('/:courseId', getCourseById);
 
 export default router;

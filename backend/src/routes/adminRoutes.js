@@ -9,7 +9,9 @@ import {
 } from '../services/performanceService.js';
 import {
   getAdminDashboard,
-  enrollStudentInCourse,
+  getPendingEnrollments,
+  approveEnrollment,
+  rejectEnrollment,
   getAllStudents,
   getAllCourses,
   createTeacher,
@@ -36,7 +38,11 @@ router.get('/dashboard', authMiddleware, roleMiddleware('admin'), getAdminDashbo
 
 // Student management
 router.get('/students', authMiddleware, roleMiddleware('admin'), getAllStudents);
-router.post('/enroll', authMiddleware, roleMiddleware('admin'), enrollStudentInCourse);
+
+// Enrollment requests (student-initiated → admin approves)
+router.get('/enrollments/pending', authMiddleware, roleMiddleware('admin'), getPendingEnrollments);
+router.put('/enrollments/:id/approve', authMiddleware, roleMiddleware('admin'), approveEnrollment);
+router.put('/enrollments/:id/reject', authMiddleware, roleMiddleware('admin'), rejectEnrollment);
 
 // Course management
 router.get('/courses', authMiddleware, roleMiddleware('admin'), getAllCourses);
