@@ -15,7 +15,7 @@ const quizAttemptSchema = new mongoose.Schema(
     courseId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Course',
-      required: true,
+      default: null,
     },
     answers: {
       type: [Number], // Array of answer indices [0, 1, 2, etc.]

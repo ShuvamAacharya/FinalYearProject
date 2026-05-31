@@ -59,22 +59,13 @@ const userSchema = new mongoose.Schema(
     },
     // Performance Metrics
     performanceMetrics: {
-      totalQuizzesTaken: {
-        type: Number,
-        default: 0,
-      },
-      averageScore: {
-        type: Number,
-        default: 0,
-      },
-      totalPointsEarned: {
-        type: Number,
-        default: 0,
-      },
-      averageCompletionTime: {
-        type: Number,
-        default: 0,
-      },
+      totalQuizzesTaken: { type: Number, default: 0 },
+      averageScore: { type: Number, default: 0 },
+      totalPointsEarned: { type: Number, default: 0 },
+      averageCompletionTime: { type: Number, default: 0 },
+      creditPoints: { type: Number, default: 0 },
+      generalQuizzesTaken: { type: Number, default: 0 },
+      generalQuizzesPassedCount: { type: Number, default: 0 },
     },
     // Dates
     promotedToInstructorAt: {

@@ -47,10 +47,24 @@ const courseSchema = new mongoose.Schema(
       type: Number, // in hours
       default: 0,
     },
+    price: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    isFree: {
+      type: Boolean,
+      default: true,
+    },
   },
-  { 
-    timestamps: true 
+  {
+    timestamps: true
   }
 );
+
+courseSchema.pre('save', function (next) {
+  this.isFree = this.price === 0;
+  next();
+});
 
 export default mongoose.model('Course', courseSchema);
