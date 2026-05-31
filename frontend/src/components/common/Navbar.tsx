@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { FiLogOut } from 'react-icons/fi';
+import NotificationDropdown from './NotificationDropdown';
 
 const Navbar = () => {
   const { user, logout } = useAuthStore();
@@ -22,6 +23,7 @@ const Navbar = () => {
           </Link>
 
           <div className="flex items-center gap-4">
+            {user && <NotificationDropdown variant="light" />}
             <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
               <img
                 src={user?.avatar || 'https://ui-avatars.com/api/?background=2F6FDB&color=fff&name=User'}

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
 interface ProtectedRouteProps {
@@ -8,6 +8,7 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   const { user, token, fetchUser } = useAuthStore();
+  const location = useLocation();
 
   useEffect(() => {
     if (token && !user) {
@@ -16,7 +17,7 @@ const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   }, [token, user, fetchUser]);
 
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
   if (!user) {
