@@ -8,12 +8,19 @@ interface User {
   email: string;
   role: 'student' | 'teacher' | 'admin';
   avatar: string;
+  createdAt?: string;
   instructorEligible?: boolean;
+  instructorApproved?: boolean;
+  promotedToInstructorAt?: string;
+  isBlocked?: boolean;
   performanceMetrics?: {
     totalQuizzesTaken: number;
     averageScore: number;
     totalPointsEarned: number;
     averageCompletionTime: number;
+    creditPoints?: number;
+    generalQuizzesTaken?: number;
+    generalQuizzesPassedCount?: number;
   };
 }
 
@@ -47,11 +54,14 @@ export const useAuthStore = create<AuthState>((set) => ({
       });
       
       toast.success('Login successful!');
-      
-      // Force redirect using window.location
-      console.log('Forcing redirect for role:', data.user.role);
-      
+
       setTimeout(() => {
+        const params = new URLSearchParams(window.location.search);
+        const redirectTo = params.get('redirect');
+        if (redirectTo) {
+          window.location.href = redirectTo;
+          return;
+        }
         if (data.user.role === 'student') {
           window.location.href = '/student/dashboard';
         } else if (data.user.role === 'teacher') {
@@ -89,10 +99,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       });
       
       toast.success('Registration successful!');
-      
-      // Force redirect using window.location
-      console.log('Forcing redirect for role:', data.user.role);
-      
+
       setTimeout(() => {
         if (data.user.role === 'student') {
           window.location.href = '/student/dashboard';

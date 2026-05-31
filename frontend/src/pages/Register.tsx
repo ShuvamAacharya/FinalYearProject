@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { FiUser, FiMail, FiLock, FiBriefcase } from 'react-icons/fi';
 
@@ -20,33 +20,30 @@ const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [shakeForm, setShakeForm] = useState(false);
   const [role, setRole] = useState('student');
-  const { register, loading, user } = useAuthStore();
-  const navigate = useNavigate();
+  const { register, loading } = useAuthStore();
 
-  useEffect(() => {
-    if (user) {
-      if (user.role === 'student') navigate('/student/dashboard', { replace: true });
-      else if (user.role === 'teacher') navigate('/teacher/dashboard', { replace: true });
-      else if (user.role === 'admin') navigate('/admin/dashboard', { replace: true });
-    }
-  }, [user, navigate]);
+  const passwordsMatch = password === confirmPassword;
+  const showPasswordFeedback = Boolean(password && confirmPassword);
+  const canSubmit = passwordsMatch && password.length >= 6 && !loading;
+
+  const triggerShake = () => {
+    setShakeForm(true);
+    setTimeout(() => setShakeForm(false), 450);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!passwordsMatch) {
+      triggerShake();
+      return;
+    }
     try {
       await register(name, email, password, role);
-      const currentUser = useAuthStore.getState().user;
-      setTimeout(() => {
-        if (currentUser?.role === 'student') {
-          navigate('/student/dashboard', { replace: true });
-        } else if (currentUser?.role === 'teacher') {
-          navigate('/teacher/dashboard', { replace: true });
-        } else if (currentUser?.role === 'admin') {
-          navigate('/admin/dashboard', { replace: true });
-        }
-      }, 100);
     } catch (error) {
       console.error('Registration failed:', error);
     }
@@ -62,10 +59,9 @@ const Register = () => {
       style={{ backgroundColor: '#0f1117', fontFamily: 'Inter, system-ui, sans-serif' }}
     >
       <div
-        className="w-full max-w-md rounded-2xl p-8 shadow-2xl"
+        className={`w-full max-w-md rounded-2xl p-8 shadow-2xl ${shakeForm ? 'animate-shake' : ''}`}
         style={{ backgroundColor: '#1a1d27', border: '1px solid #2d3748' }}
       >
-        {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center mb-3">
             <span className="text-white font-bold text-xl leading-none">E</span>
@@ -75,7 +71,6 @@ const Register = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Full Name */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1.5">Full Name</label>
             <div className="relative">
@@ -94,7 +89,6 @@ const Register = () => {
             </div>
           </div>
 
-          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1.5">Email Address</label>
             <div className="relative">
@@ -113,7 +107,6 @@ const Register = () => {
             </div>
           </div>
 
-          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1.5">Password</label>
             <div className="relative">
@@ -141,7 +134,47 @@ const Register = () => {
             </div>
           </div>
 
-          {/* Role */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Confirm Password</label>
+            <div className="relative">
+              <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-base" />
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`${inputClass} pl-10 pr-11`}
+                style={{
+                  ...inputStyle,
+                  borderColor: showPasswordFeedback
+                    ? passwordsMatch
+                      ? 'rgba(16,185,129,0.5)'
+                      : '#ef4444'
+                    : '#2d3748',
+                }}
+                placeholder="••••••••"
+                required
+                minLength={6}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-200 transition-colors"
+                tabIndex={-1}
+              >
+                {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+              </button>
+            </div>
+            {showPasswordFeedback && (
+              passwordsMatch ? (
+                <span className="text-green-500 text-sm mt-1.5 block">✓ Passwords match</span>
+              ) : (
+                <span className="text-red-500 text-sm mt-1.5 block">✗ Passwords don&apos;t match — Passwords must match</span>
+              )
+            )}
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1.5">I am a…</label>
             <div className="relative">
@@ -165,27 +198,30 @@ const Register = () => {
             </div>
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={!canSubmit}
+            onClick={(e) => {
+              if (!passwordsMatch) {
+                e.preventDefault();
+                triggerShake();
+              }
+            }}
             className="w-full py-3 rounded-lg font-semibold text-white bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 mt-2"
           >
             {loading ? 'Creating account…' : 'Create Account'}
           </button>
         </form>
 
-        {/* Divider */}
         <div className="flex items-center gap-3 my-6">
           <div className="flex-1" style={{ borderTop: '1px solid #2d3748' }} />
           <span className="text-gray-500 text-xs">or log in with</span>
           <div className="flex-1" style={{ borderTop: '1px solid #2d3748' }} />
         </div>
 
-        {/* Google */}
         <button
           type="button"
-          onClick={() => window.location.href = 'http://localhost:5000/api/auth/google'}
+          onClick={() => { window.location.href = 'http://localhost:5000/api/auth/google'; }}
           className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg font-medium text-gray-300 hover:text-white transition-colors duration-150"
           style={{ border: '1px solid #2d3748', backgroundColor: '#1f2937' }}
         >

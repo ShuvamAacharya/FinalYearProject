@@ -128,14 +128,14 @@ const Login = () => {
             <p className="text-xs text-gray-500 mb-2">Quick demo login:</p>
             <div className="flex gap-2">
               {([
-                { label: '👤 Student', email: 'student@educity.com' },
-                { label: '🎓 Teacher', email: 'teacher@educity.com' },
-                { label: '🔧 Admin',   email: 'admin@educity.com'   },
-              ] as const).map(({ label, email: demoEmail }) => (
+                { label: '👤 Student', email: 'student@educity.com', password: 'Student@123' },
+                { label: '🎓 Teacher', email: 'teacher@educity.com', password: 'Teacher@123' },
+                { label: '🔧 Admin',   email: 'admin@educity.com',   password: 'Admin@123'   },
+              ] as const).map(({ label, email: demoEmail, password: demoPassword }) => (
                 <button
                   key={demoEmail}
                   type="button"
-                  onClick={() => { setEmail(demoEmail); setPassword('Student@123'); setError(''); }}
+                  onClick={() => { setEmail(demoEmail); setPassword(demoPassword); setError(''); }}
                   className="flex-1 text-xs px-2 py-1.5 rounded-full font-medium text-gray-400 hover:text-green-400 hover:border-green-500 transition-colors"
                   style={{ border: '1px solid #2d3748' }}
                 >
