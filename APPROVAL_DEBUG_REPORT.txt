@@ -1,0 +1,51 @@
+APPROVAL DEBUG REPORT
+=====================
+Date: 2026-04-29
+
+ROOT CAUSE
+----------
+Both `approveCourse` and `approveQuiz` in adminController.js call `Activity.create()`
+AFTER the database update but BEFORE sending the response. If Activity.create() throws
+for any reason, the outer catch block returns HTTP 500.
+
+The specific crash: `course.teacher._id` (or `quiz.teacher._id`) — if the teacher field
+is null or not populated, this is a TypeError. The populate() call can return null for
+deleted/missing referenced documents.
+
+EXECUTION FLOW (broken):
+  1. Course.findByIdAndUpdate() → succeeds, course status set to 'approved' in DB
+  2. Activity.create({ ..., teacherId: course.teacher._id }) → THROWS TypeError
+  3. catch block → res.status(500).json({ message: 'Server error' })
+  4. Frontend receives 500, shows "Approval failed" toast
+  5. fetchPendingCourses() is NOT called (sits in the catch block of handleApprove)
+  6. UI still shows the course as pending
+
+  NOTE: The DB update DID commit. On next page reload the course would not appear.
+  This is why it looks like approval "doesn't work" — the UI is stale, not the DB.
+
+FIX APPLIED
+-----------
+Wrapped Activity.create() in its own try/catch in both approveCourse and approveQuiz:
+
+  try {
+    await Activity.create({ ... metadata: { ..., teacherId: course.teacher?._id } });
+  } catch (activityErr) {
+    console.error('Activity log failed (non-critical):', activityErr);
+  }
+  res.json({ success: true, ... });
+
+Also changed `course.teacher._id` → `course.teacher?._id` (optional chaining) to
+prevent the TypeError even inside the inner try/catch.
+
+FILES CHANGED
+-------------
+  backend/src/controllers/adminController.js
+    - approveCourse (line ~158): wrapped Activity.create in try/catch
+    - approveQuiz   (line ~319): wrapped Activity.create in try/catch
+
+VERIFICATION
+------------
+After restart, admin approving a course should:
+  1. Return HTTP 200 with { success: true }
+  2. Show "Course approved!" toast
+  3. fetchPendingCourses() re-runs, course disappears from list

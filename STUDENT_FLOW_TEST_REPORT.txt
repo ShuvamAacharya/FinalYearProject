@@ -1,0 +1,97 @@
+=== EDUCITY STUDENT FLOW TEST REPORT ===
+Date: 2026-04-29T00:55:00.000Z
+
+--- Test Results (All 12 Steps PASS) ---
+
+[PASS] STEP 1: Login
+  user=Test Student, role=student
+  Endpoint: POST /api/auth/login
+
+[PASS] STEP 2: Student Dashboard
+  enrollments=1, certificates=0, availableQuizzes=1
+  Note: quiz questions are served via dashboard (availableQuizzes array), not a separate endpoint
+  Endpoint: GET /api/student/dashboard
+
+[PASS] STEP 3: Browse Courses (public, no auth)
+  count=2 courses returned
+  Endpoint: GET /api/courses
+
+[PASS] STEP 4: Course Preview (public, no auth)
+  Response shape: { success: true, data: { ...course, lessons[], quizCount } }
+  CoursePreview.tsx correctly reads res.data.data
+  Endpoint: GET /api/courses/:courseId
+
+[PASS] STEP 5: Initiate Enrollment (free course)
+  Free course  -> "Enrollment request submitted", enrollment status=pending
+  Paid course  -> { gatewayUrl, params } returned for eSewa form POST
+  Endpoint: POST /api/payments/esewa/initiate
+
+[PASS] STEP 6: My Enrolled Courses
+  count=1 (status=approved after admin approval)
+  Endpoint: GET /api/student/courses
+
+[PASS] STEP 7: Course Lessons
+  count=2 lessons
+  Endpoint: GET /api/student/courses/:courseId/lessons
+  IMPORTANT: requires enrollment.status === 'approved'
+
+[PASS] STEP 8: Complete Lesson
+  Lesson marked complete (idempotent)
+  Endpoint: POST /api/student/lessons/:lessonId/complete
+
+[PASS] STEP 9: Course Progress
+  50% progress (1/2 lessons completed)
+  Endpoint: GET /api/student/courses/:courseId/progress
+
+[PASS] STEP 10: My Certificates
+  count=0 before quiz submission (verified)
+  Endpoint: GET /api/student/certificates
+
+[PASS] STEP 11: Quiz (from dashboard)
+  title="Web Basics Quiz", questions=3
+  Endpoint: answers submitted to POST /api/student/quizzes/:quizId/submit
+  Payload format: { answers: [0,1,2,...], startTime: ISO, endTime: ISO }
+  Note: answers[] must be Number indices, not objects
+
+[PASS] STEP 12: Submit Quiz + Certificate Generation
+  score=100%, passed=true
+  Certificate generated: EDUCITY-MOIZY8XI-XZIQM
+  PDF created at: backend/certificates/EDUCITY-MOIZY8XI-XZIQM.pdf (2734 bytes)
+  Certificate in DB: verified via GET /api/student/certificates (count=1 post-quiz)
+
+--- Certificate Email Bug Fix ---
+File:    backend/src/services/emailService.js
+Problem: certificateService.js stores pdfPath as "/certificates/FILENAME.pdf" (URL-style).
+         emailService.js called fs.existsSync(pdfPath) on this path.
+         On Windows with cwd=d:\educity\backend, this resolved to C:\certificates\...
+         which does not exist -> email failed silently.
+Fix:     Added path import and resolved to absolute path before file operations:
+           const absolutePdfPath = pdfPath.startsWith('/')
+             ? path.join(process.cwd(), pdfPath)
+             : pdfPath;
+         All fs.existsSync / fs.statSync / fs.readFileSync now use absolutePdfPath.
+
+--- Enrollment Approval Gap (Known Issue) ---
+Free course enrollments via /payments/esewa/initiate create enrollment.status='pending'.
+There is no admin API endpoint to approve individual enrollments after payment initiation.
+POST /admin/enroll (direct admin enrollment) creates status='approved' immediately.
+Lessons/progress/quizzes require status='approved'.
+Recommendation: Add PATCH /admin/enrollments/:id/approve endpoint.
+
+--- Certificates Directory (10 PDFs total) ---
+Path: d:\educity\backend\certificates\
+  EDUCITY-MNKL7T5D-X6WJM.pdf  (Apr  4)
+  EDUCITY-MNMC0DPN-N6193.pdf  (Apr  6)
+  EDUCITY-MNMDM2CM-5MXQJ.pdf  (Apr  6)
+  EDUCITY-MNMRS7QO-DBOKG.pdf  (Apr  6)
+  EDUCITY-MNZMU749-7F7HW.pdf  (Apr 15)
+  EDUCITY-MNZRHRQZ-BUNBI.pdf  (Apr 15)
+  EDUCITY-MO6W1KDP-Y0JCQ.pdf  (Apr 20)
+  EDUCITY-MO9LLRQ1-VLV98.pdf  (Apr 22)
+  EDUCITY-MOB762P2-JS2C3.pdf  (Apr 23)
+  EDUCITY-MOIZY8XI-XZIQM.pdf  (Apr 29) <- generated during this test
+
+--- Admin Credentials ---
+admin@educity.com / Admin@1234  (password reset during this session)
+
+=== END OF REPORT ===
