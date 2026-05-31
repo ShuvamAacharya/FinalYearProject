@@ -1,7 +1,6 @@
+import './config/env.js';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-dotenv.config();
 import authRoutes from './routes/authRoutes.js';
 import passport from 'passport';
 import { configurePassport } from './config/passport.js';
@@ -10,13 +9,23 @@ import teacherRoutes from './routes/teacherRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import certificateRoutes from './routes/certificateRoutes.js';
 import courseRoutes from './routes/courseRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
+import esewaRoutes from './routes/esewaRoutes.js';
+import generalQuizRoutes from './routes/generalQuizRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import noteRoutes from './routes/noteRoutes.js';
 import Certificate from './models/Certificate.js';
 
 configurePassport();
 const app = express();
 
 // Middleware
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+app.use(
+  cors({
+    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
@@ -28,7 +37,12 @@ app.use('/api/auth', authRoutes);
 app.use('/api/teacher', teacherRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/esewa', esewaRoutes);
 app.use('/api/student/certificates', certificateRoutes);
+app.use('/api/general-quizzes', generalQuizRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/notes', noteRoutes);
 
 // Public certificate verification (no auth required)
 app.get('/api/certificates/verify/:certNumber', async (req, res) => {

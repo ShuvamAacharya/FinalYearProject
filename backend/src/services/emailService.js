@@ -1,14 +1,30 @@
 import nodemailer from 'nodemailer';
 import fs from 'fs';
+import path from 'path';
 
+const emailPort = parseInt(process.env.EMAIL_PORT, 10) || 587;
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: false,
+  service: process.env.EMAIL_SERVICE || 'gmail',
+  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+  port: emailPort,
+  secure: emailPort === 465,
+  requireTLS: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD,
   },
+  tls: {
+    rejectUnauthorized: false,
+  },
+  family: 4, // force IPv4, avoids ECONNREFUSED ::1 on systems preferring IPv6
+});
+
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('❌ Email transporter verification failed:', error);
+  } else {
+    console.log('✅ Email transporter is ready to send messages');
+  }
 });
 
 export const sendCertificateEmail = async (studentEmail, studentName, certificateNumber, pdfPath, courseName, score) => {
@@ -21,13 +37,20 @@ export const sendCertificateEmail = async (studentEmail, studentName, certificat
     console.log('Course Name:', courseName);
     console.log('Score:', score);
     
+    // Resolve URL-style path (/certificates/file.pdf) to absolute filesystem path
+    const absolutePdfPath = pdfPath.startsWith('/')
+      ? path.join(process.cwd(), pdfPath)
+      : pdfPath;
+
+    console.log('Resolved absolute path:', absolutePdfPath);
+
     // Check if file exists
-    if (!fs.existsSync(pdfPath)) {
-      console.error('❌ PDF FILE NOT FOUND at path:', pdfPath);
+    if (!fs.existsSync(absolutePdfPath)) {
+      console.error('❌ PDF FILE NOT FOUND at path:', absolutePdfPath);
       console.log('Current directory:', process.cwd());
       console.log('Checking if certificates folder exists...');
-      
-      const certsFolder = './certificates';
+
+      const certsFolder = path.join(process.cwd(), 'certificates');
       if (fs.existsSync(certsFolder)) {
         console.log('✅ Certificates folder exists');
         const files = fs.readdirSync(certsFolder);
@@ -35,15 +58,15 @@ export const sendCertificateEmail = async (studentEmail, studentName, certificat
       } else {
         console.error('❌ Certificates folder does not exist!');
       }
-      
+
       return { success: false, message: 'Certificate PDF file not found' };
     }
 
     console.log('✅ PDF file exists!');
-    const fileStats = fs.statSync(pdfPath);
+    const fileStats = fs.statSync(absolutePdfPath);
     console.log('PDF file size:', fileStats.size, 'bytes');
 
-    const pdfBuffer = fs.readFileSync(pdfPath);
+    const pdfBuffer = fs.readFileSync(absolutePdfPath);
     console.log('✅ PDF buffer created, size:', pdfBuffer.length, 'bytes');
 
     const mailOptions = {
