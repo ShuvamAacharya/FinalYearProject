@@ -4,6 +4,10 @@ import axios from '../../api/axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
 import ProfileDropdown from '../../components/common/ProfileDropdown';
+import {
+  Users, BookOpen, CheckCircle, Clock, FileText,
+  GraduationCap, CreditCard, UserCheck, ClipboardList, ArrowRight
+} from 'lucide-react';
 
 const BG       = '#0f1117';
 const CARD     = '#1a1d27';
@@ -63,18 +67,18 @@ const AdminDashboard = () => {
   const pendingInstructors = stats?.pendingInstructorRequests ?? 0;
 
   const statCards = [
-    { label: 'Total Students',    value: stats?.totalStudents    || 0, color: '#4ade80', icon: '👨‍🎓' },
-    { label: 'Total Teachers',    value: stats?.totalTeachers    || 0, color: '#60a5fa', icon: '👨‍🏫' },
-    { label: 'Total Courses',     value: stats?.totalCourses     || 0, color: '#c084fc', icon: '📚' },
-    { label: 'Approved Courses',  value: stats?.approvedCourses  || 0, color: '#4ade80', icon: '✅' },
-    { label: 'Pending Courses',   value: stats?.pendingCourses   || 0, color: '#facc15', icon: '⏳' },
-    { label: 'Total Enrollments', value: stats?.totalEnrollments || 0, color: '#60a5fa', icon: '📝' },
+    { label: 'Total Students',    value: stats?.totalStudents    || 0, color: '#4ade80', icon: <Users size={20} /> },
+    { label: 'Total Teachers',    value: stats?.totalTeachers    || 0, color: '#60a5fa', icon: <UserCheck size={20} /> },
+    { label: 'Total Courses',     value: stats?.totalCourses     || 0, color: '#c084fc', icon: <BookOpen size={20} /> },
+    { label: 'Approved Courses',  value: stats?.approvedCourses  || 0, color: '#4ade80', icon: <CheckCircle size={20} /> },
+    { label: 'Pending Courses',   value: stats?.pendingCourses   || 0, color: '#facc15', icon: <Clock size={20} /> },
+    { label: 'Total Enrollments', value: stats?.totalEnrollments || 0, color: '#60a5fa', icon: <FileText size={20} /> },
   ];
 
   const actionCards = [
     {
       to: '/admin/enrollment-requests',
-      icon: '👥',
+      icon: <Users size={24} />,
       iconBg: 'rgba(59,130,246,0.15)',
       iconColor: '#60a5fa',
       title: 'Enrollment Requests',
@@ -82,7 +86,7 @@ const AdminDashboard = () => {
     },
     {
       to: '/admin/course-approvals',
-      icon: '✅',
+      icon: <CheckCircle size={24} />,
       iconBg: 'rgba(34,197,94,0.15)',
       iconColor: '#4ade80',
       title: 'Approve Courses',
@@ -90,7 +94,7 @@ const AdminDashboard = () => {
     },
     {
       to: '/admin/quiz-approvals',
-      icon: '📝',
+      icon: <ClipboardList size={24} />,
       iconBg: 'rgba(251,146,60,0.15)',
       iconColor: '#fb923c',
       title: 'Approve Quizzes',
@@ -98,7 +102,7 @@ const AdminDashboard = () => {
     },
     {
       to: '/admin/instructor-eligibility',
-      icon: '🎓',
+      icon: <GraduationCap size={24} />,
       iconBg: 'rgba(192,132,252,0.15)',
       iconColor: '#c084fc',
       title: 'Instructor Eligibility',
@@ -106,7 +110,7 @@ const AdminDashboard = () => {
     },
     {
       to: '/admin/payments',
-      icon: '💳',
+      icon: <CreditCard size={24} />,
       iconBg: 'rgba(251,191,36,0.15)',
       iconColor: '#fbbf24',
       title: 'Payment Logs',
@@ -139,7 +143,7 @@ const AdminDashboard = () => {
           >
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <span className="text-3xl">🎓</span>
+                <GraduationCap size={28} className="text-purple-300" />
                 <div>
                   <p className="text-purple-300 text-xs font-bold uppercase tracking-wide">Action needed</p>
                   <p className="text-white font-bold text-lg">
@@ -163,7 +167,7 @@ const AdminDashboard = () => {
             <div key={s.label} className="rounded-xl p-5" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
               <div className="flex items-center justify-between mb-2">
                 <p className="text-gray-400 text-xs font-medium">{s.label}</p>
-                <span className="text-2xl">{s.icon}</span>
+                <span style={{ color: s.color }}>{s.icon}</span>
               </div>
               <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
             </div>
@@ -175,7 +179,7 @@ const AdminDashboard = () => {
           >
             <div className="flex items-center justify-between mb-2">
               <p className="text-gray-400 text-xs font-medium">Instructor Requests</p>
-              <span className="text-2xl">🎓</span>
+              <GraduationCap size={22} className="text-purple-400" />
             </div>
             <p className="text-2xl font-bold text-purple-400">{pendingInstructors}</p>
             {pendingInstructors > 0 && (
@@ -205,7 +209,7 @@ const AdminDashboard = () => {
                 </div>
                 <h3 className="font-semibold text-white text-sm mb-1">{a.title}</h3>
                 <p className="text-gray-400 text-xs flex-1">{a.desc}</p>
-                <span className="text-green-400 text-sm mt-3 group-hover:underline">→</span>
+                <ArrowRight size={16} className="text-green-400 mt-3" />
               </Link>
             ))}
           </div>

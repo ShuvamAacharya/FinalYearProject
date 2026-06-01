@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from '../../api/axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
-import { Plus, Trash2, ArrowLeft, BookOpen, Target, Check } from 'lucide-react';
+import { Plus, Trash2, BookOpen, Target, Check } from 'lucide-react';
+import PageHeader from '../../components/ui/PageHeader';
 
 const BG       = '#0f1117';
 const CARD     = '#1a1d27';
@@ -183,14 +184,13 @@ const CreateQuiz = () => {
       <DarkHeader user={user} onLogout={handleLogout} />
 
       <div className="max-w-3xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <button onClick={() => navigate('/teacher/dashboard')}
-            className="text-sm text-gray-500 hover:text-green-400 transition-colors mb-3 flex items-center gap-1.5">
-            <ArrowLeft size={16} /> Back to Dashboard
-          </button>
-          <h1 className="text-2xl font-bold text-white">Create New Quiz</h1>
-          <p className="text-gray-400 text-sm mt-1">Build a quiz — it will be reviewed by admin before publishing.</p>
-        </div>
+        <PageHeader
+          title="Create New Quiz"
+          subtitle="Build a quiz — it will be reviewed by admin before publishing."
+          showBack
+          backTo="/teacher/dashboard"
+          backLabel="Back to Dashboard"
+        />
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Info */}

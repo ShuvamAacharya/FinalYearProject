@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
 import ProfileDropdown from '../../components/common/ProfileDropdown';
 import { CheckCircle, XCircle, Clock, User, BookOpen } from 'lucide-react';
+import PageHeader from '../../components/ui/PageHeader';
 
 const BG     = '#0f1117';
 const CARD   = '#1a1d27';
@@ -96,16 +97,13 @@ const EnrollmentRequests = () => {
       <DarkHeader user={user} onLogout={handleLogout} />
 
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-        <button
-          onClick={() => navigate('/admin/dashboard')}
-          className="text-sm text-gray-500 hover:text-green-400 transition-colors mb-3 flex items-center gap-1"
-        >
-          ← Back to Dashboard
-        </button>
-        <h1 className="text-2xl font-bold text-white">Enrollment Requests</h1>
-        <p className="text-gray-400 text-sm mt-1">
-          Review and approve student enrollment requests — no manual enrollment
-        </p>
+        <PageHeader
+          title="Enrollment Requests"
+          subtitle="Review and approve student enrollment requests"
+          showBack
+          backTo="/admin/dashboard"
+          backLabel="Back to Dashboard"
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-8">
           <div className="rounded-xl p-5" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
 import axios from '../../api/axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
 import ProfileDropdown from '../../components/common/ProfileDropdown';
 import { API_BASE } from '../../components/quiz/quizTheme';
+import PageHeader from '../../components/ui/PageHeader';
+import { GraduationCap, Medal } from 'lucide-react';
 
 const BG     = '#0f1117';
 const CARD   = '#1a1d27';
@@ -68,30 +69,19 @@ const Certificates = () => {
       <DarkHeader user={user} onLogout={handleLogout} />
 
       <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
-        <button
-          type="button"
-          onClick={() => navigate('/student/dashboard')}
-          className="flex items-center gap-2 text-blue-400 hover:text-blue-300 mb-6 transition font-semibold"
-        >
-          <ArrowLeft size={20} />
-          Back to Dashboard
-        </button>
-
-        <div className="mb-10">
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">
-            My Certificates 🏆
-          </h1>
-          <p className="mt-2 text-gray-400 text-sm">
-            Certificates you have earned by passing course quizzes.
-          </p>
-        </div>
+        <PageHeader
+          title="My Certificates"
+          subtitle="Certificates you have earned by passing course quizzes."
+          showBack
+          backTo="/student/dashboard"
+        />
 
         {certificates.length === 0 ? (
           <div
             className="rounded-2xl flex flex-col items-center justify-center py-24 text-center"
             style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}
           >
-            <span className="text-6xl mb-6">🎓</span>
+            <GraduationCap size={56} className="text-gray-600 mb-6 mx-auto" />
             <h3 className="text-xl font-bold text-white mb-2">No certificates yet</h3>
             <p className="text-gray-400 text-sm mb-6 max-w-sm">
               Complete a course and pass its quiz to earn your first certificate.
@@ -119,7 +109,7 @@ const Certificates = () => {
                       className="w-12 h-12 rounded-full flex items-center justify-center text-2xl shrink-0"
                       style={{ backgroundColor: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)' }}
                     >
-                      🏅
+                      <Medal size={24} className="text-yellow-400" />
                     </div>
                     <div className="min-w-0">
                       <h3 className="font-bold text-white text-lg leading-tight truncate">

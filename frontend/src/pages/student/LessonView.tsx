@@ -4,6 +4,7 @@ import axios from '../../api/axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
 import NotesSection from '../../components/NotesSection';
+import PageHeader from '../../components/ui/PageHeader';
 
 const BG       = '#0f1117';
 const CARD     = '#1a1d27';
@@ -150,28 +151,24 @@ const LessonView = () => {
 
       <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
 
-        {/* Back link */}
-        <Link
-          to={`/student/courses/${lesson.courseId}`}
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-green-400 transition-colors mb-6"
-        >
-          ← Back to Course
-        </Link>
+        <PageHeader
+          title={lesson.title}
+          subtitle={lesson.course?.title}
+          showBack
+          backTo={`/student/courses/${lesson.courseId}`}
+          backLabel="Back to Course"
+        />
 
         {/* Lesson header card */}
         <div className="rounded-xl p-6 mb-6" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-white mb-1">{lesson.title}</h1>
-              <p className="text-gray-400 text-sm">{lesson.course?.title}</p>
-            </div>
-            {lesson.completed && (
-              <span className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full"
+          {lesson.completed && (
+            <div className="mb-4">
+              <span className="text-xs font-semibold px-3 py-1.5 rounded-full"
                 style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
-                ✅ Completed
+                Completed
               </span>
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center gap-3 mt-4">
             {lesson.duration && (

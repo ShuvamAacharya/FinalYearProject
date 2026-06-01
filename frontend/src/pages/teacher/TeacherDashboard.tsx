@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from '../../api/axios';
 import { useAuthStore } from '../../store/authStore';
 import ProfileDropdown from '../../components/common/ProfileDropdown';
+import { BookOpen, Users, CheckCircle, Clock } from 'lucide-react';
 
 const BG       = '#0f1117';
 const CARD     = '#1a1d27';
@@ -111,15 +112,15 @@ const TeacherDashboard = () => {
         {/* Stat cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
-            { label: 'Total Courses',    value: stats.totalCourses   || 0, color: '#60a5fa', icon: '📘' },
-            { label: 'Total Students',   value: stats.totalStudents  || 0, color: '#4ade80', icon: '👥' },
-            { label: 'Active Courses',   value: stats.activeCourses  || 0, color: '#818cf8', icon: '✅' },
-            { label: 'Pending Approval', value: stats.pendingCourses || 0, color: '#facc15', icon: '⏳' },
+            { label: 'Total Courses',    value: stats.totalCourses   || 0, color: '#60a5fa', icon: <BookOpen size={20} /> },
+            { label: 'Total Students',   value: stats.totalStudents  || 0, color: '#4ade80', icon: <Users size={20} /> },
+            { label: 'Active Courses',   value: stats.activeCourses  || 0, color: '#818cf8', icon: <CheckCircle size={20} /> },
+            { label: 'Pending Approval', value: stats.pendingCourses || 0, color: '#facc15', icon: <Clock size={20} /> },
           ].map((s) => (
             <div key={s.label} className="rounded-xl p-5" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
               <div className="flex items-center justify-between mb-2">
                 <p className="text-gray-400 text-xs font-medium">{s.label}</p>
-                <span className="text-xl">{s.icon}</span>
+                <span style={{ color: s.color }}>{s.icon}</span>
               </div>
               <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
             </div>

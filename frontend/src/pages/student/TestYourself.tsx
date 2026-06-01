@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, Clock, FileQuestion, Play, ArrowLeft } from 'lucide-react';
+import { Search, Clock, FileQuestion, Play, Target, Star } from 'lucide-react';
 import axios from '../../api/axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
 import ProfileDropdown from '../../components/common/ProfileDropdown';
+import PageHeader from '../../components/ui/PageHeader';
 
 const BG     = '#0f1117';
 const CARD   = '#1a1d27';
@@ -72,7 +73,6 @@ const TestYourself = () => {
   };
 
   const handleLogout = () => { logout(); navigate('/'); };
-  const creditPoints = user?.performanceMetrics?.creditPoints ?? 0;
 
   const filteredQuizzes = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -89,41 +89,14 @@ const TestYourself = () => {
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: BG, fontFamily: 'Inter, system-ui, sans-serif' }}>
       <DarkHeader user={user} onLogout={handleLogout} />
 
-      {/* Hero */}
-      <div className="px-6 py-10" style={{ background: `linear-gradient(to right, #1a1d27, ${BG})`, borderBottom: `1px solid ${BORDER}` }}>
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Practice Quizzes</h1>
-            <p className="text-gray-400 text-sm mt-2">Skill testing & practice — no certificate, earn credit points</p>
-          </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <span
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border"
-              style={{ backgroundColor: 'rgba(234,179,8,0.15)', color: '#facc15', borderColor: 'rgba(234,179,8,0.3)' }}
-            >
-              ⭐ {creditPoints} Credit Points
-            </span>
-            <button
-              onClick={() => navigate('/student/quiz-history')}
-              className="text-sm text-gray-400 hover:text-green-400 transition-colors border rounded-full px-4 py-2"
-              style={{ borderColor: BORDER }}
-            >
-              📊 My History
-            </button>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
 
-        <button
-          type="button"
-          onClick={() => navigate('/student/dashboard')}
-          className="flex items-center gap-2 text-blue-400 hover:text-blue-300 mb-6 transition font-semibold"
-        >
-          <ArrowLeft size={20} />
-          Back to Dashboard
-        </button>
+        <PageHeader
+          title="Practice Quizzes"
+          subtitle="Skill testing &amp; practice — no certificate, earn credit points"
+          showBack
+          backTo="/student/dashboard"
+        />
 
         <div className="relative mb-6">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -169,7 +142,7 @@ const TestYourself = () => {
           </div>
         ) : filteredQuizzes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-            <span className="text-5xl mb-4">🎯</span>
+            <Target size={48} className="text-gray-600 mb-4 mx-auto" />
             <p className="text-lg font-medium text-white">
               {searchQuery ? 'No quizzes match your search' : 'No quizzes available yet'}
             </p>
@@ -221,7 +194,7 @@ const TestYourself = () => {
                   className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full border mb-4 w-fit"
                   style={{ backgroundColor: 'rgba(234,179,8,0.1)', color: '#facc15', borderColor: 'rgba(234,179,8,0.2)' }}
                 >
-                  ⭐ +{quiz.creditPoints || 10} pts
+                  <Star size={14} className="text-yellow-400" /> +{quiz.creditPoints || 10} pts
                 </div>
 
                 <button
@@ -237,20 +210,12 @@ const TestYourself = () => {
           </div>
         )}
 
-        {/* Bottom links */}
-        <div className="flex items-center gap-4 mt-10 pt-6" style={{ borderTop: `1px solid ${BORDER}` }}>
+        <div className="flex items-center gap-4 mt-10 pt-6 border-t border-gray-700">
           <button
             onClick={() => navigate('/student/quiz-history')}
             className="text-sm text-gray-400 hover:text-green-400 transition-colors"
           >
-            📊 View My Quiz History
-          </button>
-          <span className="text-gray-700">·</span>
-          <button
-            onClick={() => navigate('/student/dashboard')}
-            className="text-sm text-gray-400 hover:text-green-400 transition-colors"
-          >
-            🏠 Back to Dashboard
+            View My Quiz History
           </button>
         </div>
       </div>

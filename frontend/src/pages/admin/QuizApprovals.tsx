@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from '../../api/axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
 import ProfileDropdown from '../../components/common/ProfileDropdown';
 import { FiCheckCircle, FiX, FiClock } from 'react-icons/fi';
+import PageHeader from '../../components/ui/PageHeader';
 
 const BG     = '#0f1117';
 const CARD   = '#1a1d27';
@@ -90,18 +91,13 @@ const QuizApprovals = () => {
       <DarkHeader user={user} onLogout={handleLogout} />
 
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex-1">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Quiz Approvals</h1>
-            <p className="text-gray-400 text-sm">Review and approve quizzes created by instructors</p>
-          </div>
-          <Link
-            to="/admin/dashboard"
-            className="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors"
-          >
-            ← Admin Dashboard
-          </Link>
-        </div>
+        <PageHeader
+          title="Quiz Approvals"
+          subtitle="Review and approve quizzes created by instructors"
+          showBack
+          backTo="/admin/dashboard"
+          backLabel="Back to Dashboard"
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="rounded-xl p-5" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
@@ -137,10 +133,10 @@ const QuizApprovals = () => {
                   <div className="mb-4">
                     <h3 className="font-bold text-xl text-white mb-2">{quiz.title}</h3>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400 mb-4">
-                      <span>📚 {quiz.course?.title}</span>
-                      <span>📝 {quiz.questions?.length} questions</span>
-                      <span>⏱️ {quiz.duration} minutes</span>
-                      <span>✅ {quiz.passingScore}% to pass</span>
+                      <span>{quiz.course?.title}</span>
+                      <span>{quiz.questions?.length} questions</span>
+                      <span>{quiz.duration} min</span>
+                      <span>{quiz.passingScore}% to pass</span>
                     </div>
 
                     <div className="flex items-center gap-2 mb-4">

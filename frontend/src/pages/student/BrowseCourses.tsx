@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
 import axios from '../../api/axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
 import ProfileDropdown from '../../components/common/ProfileDropdown';
+import PageHeader from '../../components/ui/PageHeader';
+import { BookOpen, Clock, Users } from 'lucide-react';
 
 const BG      = '#0f1117';
 const CARD    = '#1a1d27';
@@ -52,9 +53,9 @@ const SkeletonCard = () => (
 );
 
 const statusBadge: Record<string, { label: string; cls: string }> = {
-  pending:  { label: '⏳ Pending Approval',     cls: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' },
-  approved: { label: '✅ Enrolled',              cls: 'bg-green-500/10  text-green-400  border-green-500/30'  },
-  rejected: { label: '❌ Enrollment Rejected',   cls: 'bg-red-500/10    text-red-400    border-red-500/30'    },
+  pending:  { label: 'Pending Approval',   cls: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' },
+  approved: { label: 'Enrolled',           cls: 'bg-green-500/10  text-green-400  border-green-500/30'  },
+  rejected: { label: 'Enrollment Rejected', cls: 'bg-red-500/10   text-red-400    border-red-500/30'    },
 };
 
 const BrowseCourses = () => {
@@ -111,20 +112,12 @@ const BrowseCourses = () => {
 
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
 
-        <button
-          type="button"
-          onClick={() => navigate('/student/dashboard')}
-          className="flex items-center gap-2 text-blue-400 hover:text-blue-300 mb-6 transition font-semibold"
-        >
-          <ArrowLeft size={20} />
-          Back to Dashboard
-        </button>
-
-        {/* Page header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white">Browse Courses</h1>
-          <p className="text-gray-400 text-sm mt-1">Discover and enroll in instructor-led courses</p>
-        </div>
+        <PageHeader
+          title="Browse Courses"
+          subtitle="Discover and enroll in instructor-led courses"
+          showBack
+          backTo="/student/dashboard"
+        />
 
         {/* Search */}
         <div className="relative max-w-md mb-8">
@@ -148,7 +141,7 @@ const BrowseCourses = () => {
           </div>
         ) : filteredCourses.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <span className="text-5xl mb-4">📚</span>
+            <BookOpen size={48} className="text-gray-600 mb-4 mx-auto" />
             <p className="text-gray-300 font-medium text-lg">No courses found</p>
             <p className="text-gray-500 text-sm mt-1">Try adjusting your search query</p>
           </div>
@@ -166,8 +159,8 @@ const BrowseCourses = () => {
                   {course.thumbnail ? (
                     <img src={course.thumbnail} alt={course.title} className="w-full h-44 object-cover" />
                   ) : (
-                    <div className="w-full h-44 flex items-center justify-center text-4xl" style={{ backgroundColor: '#1f2937' }}>
-                      📚
+                    <div className="w-full h-44 flex items-center justify-center" style={{ backgroundColor: '#1f2937' }}>
+                      <BookOpen size={40} className="text-gray-600" />
                     </div>
                   )}
 
@@ -203,8 +196,8 @@ const BrowseCourses = () => {
 
                     {/* Stats */}
                     <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
-                      {course.duration != null && <span>⏱ {course.duration}h</span>}
-                      {course.enrollmentCount != null && <span>👥 {course.enrollmentCount} students</span>}
+                      {course.duration != null && <span className="flex items-center gap-1"><Clock size={12} />{course.duration}h</span>}
+                      {course.enrollmentCount != null && <span className="flex items-center gap-1"><Users size={12} />{course.enrollmentCount} students</span>}
                     </div>
 
                     {/* CTA */}

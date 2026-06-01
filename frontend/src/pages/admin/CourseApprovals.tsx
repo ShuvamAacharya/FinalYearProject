@@ -1,10 +1,39 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from '../../api/axios';
-import Navbar from '../../components/common/Navbar';
 import { FiCheckCircle, FiX, FiClock, FiBook } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../../store/authStore';
+import ProfileDropdown from '../../components/common/ProfileDropdown';
+import PageHeader from '../../components/ui/PageHeader';
+
+const BG     = '#0f1117';
+const CARD   = '#1a1d27';
+const BORDER = '#2d3748';
+
+const DarkHeader = ({ user, onLogout }: { user: any; onLogout: () => void }) => (
+  <header className="sticky top-0 z-40 px-6 py-4" style={{ backgroundColor: CARD, borderBottom: `1px solid ${BORDER}` }}>
+    <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+          <span className="text-white font-bold text-sm leading-none">E</span>
+        </div>
+        <span className="text-white font-semibold text-base">EduCity</span>
+        <span className="ml-3 text-xs text-gray-400 font-medium uppercase tracking-wider">Admin</span>
+      </div>
+      {user && (
+        <ProfileDropdown
+          user={{ name: user.name, role: user.role, email: user.email }}
+          onLogout={onLogout}
+        />
+      )}
+    </div>
+  </header>
+);
 
 const CourseApprovals = () => {
+  const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
   const [pendingCourses, setPendingCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmId, setConfirmId]   = useState<string | null>(null);
@@ -51,59 +80,65 @@ const CourseApprovals = () => {
     }
   };
 
+  const handleLogout = () => { logout(); navigate('/'); };
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BG }}>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: BG, fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <DarkHeader user={user} onLogout={handleLogout} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Course Approvals</h1>
-          <p className="text-gray-600">Review and approve courses created by instructors</p>
-        </div>
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        <PageHeader
+          title="Course Approvals"
+          subtitle="Review and approve courses created by instructors"
+          showBack
+          backTo="/admin/dashboard"
+          backLabel="Back to Dashboard"
+        />
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="card">
+          <div className="rounded-xl p-6" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-500 text-sm">Pending Courses</p>
-                <p className="text-3xl font-bold text-yellow-600 mt-1">
+                <p className="text-gray-400 text-sm">Pending Courses</p>
+                <p className="text-3xl font-bold text-yellow-400 mt-1">
                   {pendingCourses.length}
                 </p>
               </div>
-              <FiClock className="text-4xl text-yellow-600" />
+              <FiClock className="text-4xl text-yellow-400" />
             </div>
           </div>
         </div>
 
         {/* Pending Courses */}
-        <div className="card">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        <div className="rounded-xl p-6" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
+          <h2 className="text-2xl font-bold text-white mb-6">
             Pending Course Approvals ({pendingCourses.length})
           </h2>
 
           {pendingCourses.length === 0 ? (
             <div className="text-center py-12">
-              <FiCheckCircle className="text-6xl text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">No pending courses</p>
-              <p className="text-gray-400 text-sm mt-2">All courses have been reviewed</p>
+              <FiCheckCircle className="text-6xl text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400 text-lg">No pending courses</p>
+              <p className="text-gray-500 text-sm mt-2">All courses have been reviewed</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {pendingCourses.map((course) => (
                 <div
                   key={course._id}
-                  className="border rounded-lg overflow-hidden hover:shadow-lg transition"
+                  className="rounded-lg overflow-hidden hover:shadow-lg transition"
+                  style={{ backgroundColor: '#252a37', border: `1px solid ${BORDER}` }}
                 >
-                  <div className="h-40 bg-gradient-to-r from-primary-400 to-primary-600 flex items-center justify-center">
+                  <div className="h-40 bg-gradient-to-r from-blue-600 to-blue-800 flex items-center justify-center">
                     {course.thumbnail ? (
                       <img
                         src={course.thumbnail}
@@ -116,49 +151,49 @@ const CourseApprovals = () => {
                   </div>
 
                   <div className="p-6">
-                    <h3 className="font-bold text-lg mb-2 line-clamp-2">{course.title}</h3>
+                    <h3 className="font-bold text-lg mb-2 line-clamp-2 text-white">{course.title}</h3>
 
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-3">
+                    <p className="text-sm text-gray-400 mb-4 line-clamp-3">
                       {course.description}
                     </p>
 
                     <div className="space-y-2 mb-4">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <span className="font-medium">Category:</span>
+                      <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <span className="font-medium text-gray-300">Category:</span>
                         <span>{course.category}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <span className="font-medium">Level:</span>
+                      <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <span className="font-medium text-gray-300">Level:</span>
                         <span className="capitalize">{course.level}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <span className="font-medium">Duration:</span>
+                      <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <span className="font-medium text-gray-300">Duration:</span>
                         <span>{course.duration} weeks</span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <span className="font-medium">Price:</span>
+                      <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <span className="font-medium text-gray-300">Price:</span>
                         <span>${course.price}</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 mb-4 pb-4 border-b">
+                    <div className="flex items-center gap-2 mb-4 pb-4" style={{ borderBottom: `1px solid ${BORDER}` }}>
                       <img
                         src={course.teacher?.avatar}
                         alt={course.teacher?.name}
                         className="w-8 h-8 rounded-full"
                       />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-white">
                           {course.teacher?.name}
                         </p>
-                        <p className="text-xs text-gray-500">{course.teacher?.email}</p>
+                        <p className="text-xs text-gray-400">{course.teacher?.email}</p>
                       </div>
                     </div>
 
                     <div className="flex gap-2">
                       <button
                         onClick={() => { setRejectId(course._id); setConfirmId(null); setRejectReason(''); }}
-                        className="flex-1 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition text-sm font-medium"
+                        className="flex-1 px-4 py-2 border border-red-500/50 text-red-400 rounded-lg hover:bg-red-500/10 transition text-sm font-medium"
                       >
                         <FiX className="inline mr-1" />
                         Reject

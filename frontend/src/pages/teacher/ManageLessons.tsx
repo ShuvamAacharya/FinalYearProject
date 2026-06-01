@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from '../../api/axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
+import PageHeader from '../../components/ui/PageHeader';
 
 const BG       = '#0f1117';
 const CARD     = '#1a1d27';
@@ -273,27 +274,23 @@ const ManageLessons = () => {
       <DarkHeader user={user} onLogout={handleLogout} />
 
       <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-        {/* Page header */}
-        <div className="mb-8">
-          <button onClick={() => navigate('/teacher/dashboard')}
-            className="text-sm text-gray-500 hover:text-green-400 transition-colors mb-3 flex items-center gap-1">
-            ← Back to Dashboard
-          </button>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-white">Manage Lessons</h1>
-              <p className="text-gray-400 text-sm mt-1">{course?.title}</p>
-            </div>
-            {!showForm && (
+        <PageHeader
+          title="Manage Lessons"
+          subtitle={course?.title}
+          showBack
+          backTo="/teacher/dashboard"
+          backLabel="Back to Dashboard"
+          action={
+            !showForm ? (
               <button
                 onClick={() => { setFormData({ ...emptyForm(), order: lessons.length + 1 }); setShowForm(true); }}
                 className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-green-500 hover:bg-green-600 transition-colors"
               >
                 + Add Lesson
               </button>
-            )}
-          </div>
-        </div>
+            ) : undefined
+          }
+        />
 
         {/* Lesson Form */}
         {showForm && (

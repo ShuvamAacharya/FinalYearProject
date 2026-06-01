@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from '../../api/axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
+import PageHeader from '../../components/ui/PageHeader';
 
 const BG       = '#0f1117';
 const CARD     = '#1a1d27';
@@ -114,14 +115,13 @@ const CreateCourse = () => {
       <DarkHeader user={user} onLogout={handleLogout} />
 
       <div className="max-w-3xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <button onClick={() => navigate('/teacher/dashboard')}
-            className="text-sm text-gray-500 hover:text-green-400 transition-colors mb-3 flex items-center gap-1">
-            ← Back to Dashboard
-          </button>
-          <h1 className="text-2xl font-bold text-white">Create New Course</h1>
-          <p className="text-gray-400 text-sm mt-1">Fill in the details below — your course will be reviewed by admin before publishing.</p>
-        </div>
+        <PageHeader
+          title="Create New Course"
+          subtitle="Fill in the details below — your course will be reviewed by admin before publishing."
+          showBack
+          backTo="/teacher/dashboard"
+          backLabel="Back to Dashboard"
+        />
 
         <form onSubmit={handleSubmit}>
           <div className="rounded-xl p-6 space-y-5" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>

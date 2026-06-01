@@ -4,6 +4,8 @@ import axios from '../../api/axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
 import ProfileDropdown from '../../components/common/ProfileDropdown';
+import PageHeader from '../../components/ui/PageHeader';
+import { CreditCard } from 'lucide-react';
 
 const BG     = '#0f1117';
 const CARD   = '#1a1d27';
@@ -77,17 +79,19 @@ const PaymentLogs = () => {
 
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
 
-        {/* Page header + revenue */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Payment Logs</h1>
-            <p className="text-gray-400 text-sm mt-1">All transactions across the platform</p>
-          </div>
-          <div className="rounded-xl px-5 py-3 text-right" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
-            <p className="text-gray-400 text-xs">Total Revenue</p>
-            <p className="text-green-400 font-bold text-xl">Rs. {totalRevenue.toLocaleString()}</p>
-          </div>
-        </div>
+        <PageHeader
+          title="Payment Logs"
+          subtitle="All transactions across the platform"
+          showBack
+          backTo="/admin/dashboard"
+          backLabel="Back to Dashboard"
+          action={
+            <div className="rounded-xl px-5 py-3 text-right" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
+              <p className="text-gray-400 text-xs">Total Revenue</p>
+              <p className="text-green-400 font-bold text-xl">Rs. {totalRevenue.toLocaleString()}</p>
+            </div>
+          }
+        />
 
         {/* Filter tabs */}
         <div className="flex items-center gap-2 mb-6 flex-wrap">
@@ -121,7 +125,7 @@ const PaymentLogs = () => {
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-              <span className="text-4xl mb-3">💳</span>
+              <CreditCard size={40} className="text-gray-600 mb-3 mx-auto" />
               <p className="text-sm">No transactions found</p>
             </div>
           ) : (

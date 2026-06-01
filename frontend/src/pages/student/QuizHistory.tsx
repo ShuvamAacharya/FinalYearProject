@@ -4,6 +4,8 @@ import axios from '../../api/axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
 import ProfileDropdown from '../../components/common/ProfileDropdown';
+import PageHeader from '../../components/ui/PageHeader';
+import { BarChart2, CheckCircle, XCircle } from 'lucide-react';
 
 const BG     = '#0f1117';
 const CARD   = '#1a1d27';
@@ -54,18 +56,20 @@ const QuizHistory = () => {
 
       <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
 
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Quiz History</h1>
-            <p className="text-gray-400 text-sm mt-1">Your general quiz attempts</p>
-          </div>
-          <button
-            onClick={() => navigate('/student/test-yourself')}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-green-500 hover:bg-green-600 transition-colors"
-          >
-            🎯 Take a Quiz
-          </button>
-        </div>
+        <PageHeader
+          title="Quiz History"
+          subtitle="Your general quiz attempts"
+          showBack
+          backTo="/student/dashboard"
+          action={
+            <button
+              onClick={() => navigate('/student/test-yourself')}
+              className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-green-500 hover:bg-green-600 transition-colors"
+            >
+              Take a Quiz
+            </button>
+          }
+        />
 
         <div className="rounded-xl overflow-hidden" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
           {loading ? (
@@ -75,7 +79,7 @@ const QuizHistory = () => {
             </div>
           ) : attempts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-              <span className="text-4xl mb-3">📊</span>
+              <BarChart2 size={40} className="text-gray-600 mb-3 mx-auto" />
               <p className="text-sm font-medium text-white">No quiz attempts yet</p>
               <button
                 onClick={() => navigate('/student/test-yourself')}
@@ -123,13 +127,14 @@ const QuizHistory = () => {
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold"
                           style={
                             a.passed
                               ? { backgroundColor: 'rgba(34,197,94,0.12)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }
                               : { backgroundColor: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }
                           }
                         >
+                          {a.passed ? <CheckCircle size={12} /> : <XCircle size={12} />}
                           {a.passed ? 'Passed' : 'Failed'}
                         </span>
                       </td>
@@ -144,12 +149,6 @@ const QuizHistory = () => {
           )}
         </div>
 
-        <button
-          onClick={() => navigate('/student/home')}
-          className="mt-6 text-sm text-gray-500 hover:text-gray-300 transition-colors"
-        >
-          ← Back to Home
-        </button>
       </div>
     </div>
   );
