@@ -1,334 +1,331 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from '../../api/axios';
-import Navbar from '../../components/common/Navbar';
-import { FiAward, FiCheckCircle, FiX, FiTrendingUp, FiClock } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../../store/authStore';
+import ProfileDropdown from '../../components/common/ProfileDropdown';
+import { GraduationCap, CheckCircle, XCircle, BookOpen, Users } from 'lucide-react';
+import PageHeader from '../../components/ui/PageHeader';
 
-interface Student {
+const BG     = '#0f1117';
+const CARD   = '#1a1d27';
+const BORDER = '#374151';
+
+const DarkHeader = ({ user, onLogout }: { user: any; onLogout: () => void }) => (
+  <header className="sticky top-0 z-40 px-6 py-4" style={{ backgroundColor: CARD, borderBottom: `1px solid ${BORDER}` }}>
+    <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+          <span className="text-white font-bold text-sm leading-none">E</span>
+        </div>
+        <span className="text-white font-semibold text-base">EduCity</span>
+        <span className="ml-3 text-xs text-gray-400 font-medium uppercase tracking-wider">Admin</span>
+      </div>
+      {user && (
+        <ProfileDropdown
+          user={{ name: user.name, role: user.role, email: user.email }}
+          onLogout={onLogout}
+        />
+      )}
+    </div>
+  </header>
+);
+
+interface GTAApplication {
   _id: string;
   name: string;
   email: string;
-  avatar: string;
-  performanceMetrics: {
-    totalQuizzesTaken: number;
-    averageScore: number;
-    totalPointsEarned: number;
-    averageCompletionTime: number;
-  };
+  passedCourses: { _id: string; title: string }[];
+  gtaStatus: string;
   createdAt: string;
 }
 
 const InstructorEligibility = () => {
-  const [eligibleStudents, setEligibleStudents] = useState<Student[]>([]);
+  const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
+  const [applications, setApplications] = useState<GTAApplication[]>([]);
+  const [allGTAs, setAllGTAs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'pending' | 'approved'>('pending');
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
-    action: 'promote' | 'reject' | null;
-    studentId: string | null;
-    studentName: string | null;
-  }>({ isOpen: false, action: null, studentId: null, studentName: null });
+    action: 'approve' | 'reject' | null;
+    userId: string | null;
+    userName: string | null;
+  }>({ isOpen: false, action: null, userId: null, userName: null });
 
-  useEffect(() => {
-    fetchEligibleStudents();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
-  const fetchEligibleStudents = async () => {
+  const fetchData = async () => {
     try {
-      const { data } = await axios.get('/admin/instructor-eligible');
-      setEligibleStudents(data.students);
-    } catch (error) {
-      toast.error('Failed to load eligible students');
+      const [appRes, gtaRes] = await Promise.all([
+        axios.get('/admin/gta-applications'),
+        axios.get('/admin/all-gtas'),
+      ]);
+      setApplications(appRes.data.applications || []);
+      setAllGTAs(gtaRes.data.gtas || []);
+    } catch {
+      toast.error('Failed to load GTA data');
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePromote = async (userId: string, studentName: string) => {
-    setConfirmModal({ isOpen: true, action: 'promote', studentId: userId, studentName });
-  };
-
-  const handleReject = async (userId: string, studentName: string) => {
-    setConfirmModal({ isOpen: true, action: 'reject', studentId: userId, studentName });
-  };
-
   const confirmAction = async () => {
-    const { action, studentId, studentName } = confirmModal;
-    if (!action || !studentId || !studentName) return;
-
+    const { action, userId, userName } = confirmModal;
+    if (!action || !userId) return;
     try {
-      if (action === 'promote') {
-        await axios.put(`/admin/promote-instructor/${studentId}`);
-        toast.success(`${studentName} has been promoted to instructor!`);
-      } else if (action === 'reject') {
-        await axios.put(`/admin/reject-instructor/${studentId}`);
-        toast.success('Eligibility rejected');
+      if (action === 'approve') {
+        await axios.put(`/admin/approve-gta/${userId}`);
+        toast.success(`${userName} is now a Graduate Teaching Assistant`);
+      } else {
+        await axios.put(`/admin/reject-gta/${userId}`);
+        toast.success(`GTA application for ${userName} rejected`);
       }
-      fetchEligibleStudents();
-      setConfirmModal({ isOpen: false, action: null, studentId: null, studentName: null });
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Action failed');
+      fetchData();
+      setConfirmModal({ isOpen: false, action: null, userId: null, userName: null });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Action failed');
     }
   };
 
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${minutes}m ${secs}s`;
-  };
+  const handleLogout = () => { logout(); navigate('/'); };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BG }}>
+        <div className="w-10 h-10 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: BG }}>
+      <DarkHeader user={user} onLogout={handleLogout} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Instructor Eligibility</h1>
-          <p className="text-gray-600">
-            High-performing students eligible for instructor promotion
-          </p>
-        </div>
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        <PageHeader
+          title="GTA Applications"
+          subtitle="Manage Graduate Teaching Assistant applications"
+          showBack
+          backTo="/admin/dashboard"
+          backLabel="Back to Dashboard"
+        />
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="card">
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="rounded-xl p-6" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-500 text-sm">Eligible Students</p>
-                <p className="text-3xl font-bold text-primary-600 mt-1">
-                  {eligibleStudents.length}
-                </p>
+                <p className="text-gray-400 text-sm">Pending Applications</p>
+                <p className="text-3xl font-bold text-yellow-400 mt-1">{applications.length}</p>
               </div>
-              <FiAward className="text-4xl text-primary-600" />
+              <GraduationCap size={32} className="text-yellow-400" />
             </div>
           </div>
-
-          <div className="card">
+          <div className="rounded-xl p-6" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-500 text-sm">Avg Score (Eligible)</p>
-                <p className="text-3xl font-bold text-green-600 mt-1">
-                  {eligibleStudents.length > 0
-                    ? (
-                        eligibleStudents.reduce(
-                          (sum, s) => sum + s.performanceMetrics.averageScore,
-                          0
-                        ) / eligibleStudents.length
-                      ).toFixed(1)
-                    : 0}
-                  %
-                </p>
+                <p className="text-gray-400 text-sm">Active GTAs</p>
+                <p className="text-3xl font-bold text-purple-400 mt-1">{allGTAs.length}</p>
               </div>
-              <FiTrendingUp className="text-4xl text-green-600" />
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Total Quizzes Taken</p>
-                <p className="text-3xl font-bold text-purple-600 mt-1">
-                  {eligibleStudents.reduce(
-                    (sum, s) => sum + s.performanceMetrics.totalQuizzesTaken,
-                    0
-                  )}
-                </p>
-              </div>
-              <FiCheckCircle className="text-4xl text-purple-600" />
+              <Users size={32} className="text-purple-400" />
             </div>
           </div>
         </div>
 
-        {/* Eligible Students Table */}
-        <div className="card">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            Eligible Students ({eligibleStudents.length})
-          </h2>
+        {/* Tab bar */}
+        <div className="flex gap-1 mb-6 border-b border-gray-700">
+          {(['pending', 'approved'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-6 py-3 text-sm font-semibold transition capitalize border-b-2 -mb-px ${
+                activeTab === tab
+                  ? 'text-purple-400 border-purple-400'
+                  : 'text-gray-400 border-transparent hover:text-white'
+              }`}
+            >
+              {tab === 'pending' ? `Pending (${applications.length})` : `Approved GTAs (${allGTAs.length})`}
+            </button>
+          ))}
+        </div>
 
-          {eligibleStudents.length === 0 ? (
-            <div className="text-center py-12">
-              <FiAward className="text-6xl text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">No eligible students yet</p>
-              <p className="text-gray-400 text-sm mt-2">
-                Students become eligible after completing 3+ quizzes with 80%+ average
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Student
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Quizzes
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Avg Score
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Avg Time
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Total Points
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Joined
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {eligibleStudents.map((student) => (
-                    <tr key={student._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          <img
-                            src={student.avatar}
-                            alt={student.name}
-                            className="w-10 h-10 rounded-full mr-3"
-                          />
-                          <div>
-                            <p className="font-medium text-gray-900">{student.name}</p>
-                            <p className="text-sm text-gray-500">{student.email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                          {student.performanceMetrics.totalQuizzesTaken}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          <div className="flex-1">
-                            <div className="flex justify-between text-sm mb-1">
-                              <span className="font-medium text-gray-900">
-                                {student.performanceMetrics.averageScore.toFixed(1)}%
-                              </span>
-                            </div>
-                            <div className="bg-gray-200 rounded-full h-2">
-                              <div
-                                className="bg-green-600 h-2 rounded-full"
-                                style={{
-                                  width: `${student.performanceMetrics.averageScore}%`,
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <FiClock className="text-gray-400" />
-                          {formatTime(student.performanceMetrics.averageCompletionTime)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        {student.performanceMetrics.totalPointsEarned}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {new Date(student.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handlePromote(student._id, student.name)}
-                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium flex items-center gap-2"
-                          >
-                            <FiCheckCircle />
-                            Promote
-                          </button>
-                          <button
-                            onClick={() => handleReject(student._id, student.name)}
-                            className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition text-sm font-medium flex items-center gap-2"
-                          >
-                            <FiX />
-                            Reject
-                          </button>
-                        </div>
-                      </td>
+        {/* Pending Applications */}
+        {activeTab === 'pending' && (
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
+            {applications.length === 0 ? (
+              <div className="text-center py-16">
+                <GraduationCap size={48} className="text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-400 font-semibold">No pending GTA applications</p>
+                <p className="text-gray-500 text-sm mt-2">Applications appear here when students pass 3 courses and apply</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr style={{ backgroundColor: '#252a37', borderBottom: `1px solid ${BORDER}` }}>
+                      {['Student', 'Passed Courses', 'Applied', 'Actions'].map((h) => (
+                        <th key={h} className="px-6 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Eligibility Criteria Info */}
-        <div className="card mt-8 bg-blue-50 border-2 border-blue-200">
-          <h3 className="text-lg font-bold text-blue-900 mb-4">
-            📋 Instructor Eligibility Criteria
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-start gap-3">
-              <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">
-                1
+                  </thead>
+                  <tbody>
+                    {applications.map((app, idx) => (
+                      <tr
+                        key={app._id}
+                        className="hover:bg-white/[0.02] transition-colors"
+                        style={{ borderBottom: idx < applications.length - 1 ? `1px solid ${BORDER}` : 'none' }}
+                      >
+                        <td className="px-6 py-4">
+                          <p className="font-medium text-white">{app.name}</p>
+                          <p className="text-sm text-gray-400">{app.email}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-2">
+                            {app.passedCourses.map((course) => (
+                              <span key={course._id}
+                                className="flex items-center gap-1 px-2 py-0.5 bg-green-600/20 text-green-400 border border-green-600/30 rounded text-xs font-medium">
+                                <BookOpen size={10} />
+                                {course.title}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-400">
+                          {new Date(app.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setConfirmModal({ isOpen: true, action: 'approve', userId: app._id, userName: app.name })}
+                              className="flex items-center gap-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition"
+                            >
+                              <CheckCircle size={14} />
+                              Approve GTA
+                            </button>
+                            <button
+                              onClick={() => setConfirmModal({ isOpen: true, action: 'reject', userId: app._id, userName: app.name })}
+                              className="flex items-center gap-1 px-4 py-2 border border-red-500/50 text-red-400 hover:bg-red-500/10 rounded-lg text-sm font-medium transition"
+                            >
+                              <XCircle size={14} />
+                              Reject
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div>
-                <p className="font-medium text-blue-900">Minimum Quizzes</p>
-                <p className="text-sm text-blue-700">Complete at least 3 quizzes</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">
-                2
-              </div>
-              <div>
-                <p className="font-medium text-blue-900">Minimum Average Score</p>
-                <p className="text-sm text-blue-700">Maintain 80%+ average across all quizzes</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Confirmation Modal */}
-        {confirmModal.isOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-lg max-w-sm w-full p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">
-                {confirmModal.action === 'promote'
-                  ? `Promote ${confirmModal.studentName} to Instructor?`
-                  : `Reject ${confirmModal.studentName}'s Eligibility?`}
-              </h3>
-              <p className="text-gray-600 text-sm mb-6">
-                {confirmModal.action === 'promote'
-                  ? `${confirmModal.studentName} will be promoted to instructor status and can start creating courses.`
-                  : `${confirmModal.studentName}'s instructor eligibility will be revoked. They can reapply after improving their performance.`}
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setConfirmModal({ isOpen: false, action: null, studentId: null, studentName: null })}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmAction}
-                  className={`flex-1 px-4 py-2 text-white rounded-lg transition text-sm font-medium ${
-                    confirmModal.action === 'promote'
-                      ? 'bg-green-600 hover:bg-green-700'
-                      : 'bg-red-600 hover:bg-red-700'
-                  }`}
-                >
-                  {confirmModal.action === 'promote' ? 'Promote' : 'Reject'}
-                </button>
-              </div>
-            </div>
+            )}
           </div>
         )}
+
+        {/* Approved GTAs */}
+        {activeTab === 'approved' && (
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
+            {allGTAs.length === 0 ? (
+              <div className="text-center py-16">
+                <Users size={48} className="text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-400 font-semibold">No GTAs yet</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr style={{ backgroundColor: '#252a37', borderBottom: `1px solid ${BORDER}` }}>
+                      {['GTA', 'Passed Courses', 'Approved On'].map((h) => (
+                        <th key={h} className="px-6 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allGTAs.map((gta, idx) => (
+                      <tr key={gta._id} className="hover:bg-white/[0.02] transition-colors"
+                        style={{ borderBottom: idx < allGTAs.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
+                        <td className="px-6 py-4">
+                          <p className="font-medium text-white">{gta.name}</p>
+                          <p className="text-sm text-gray-400">{gta.email}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-2">
+                            {gta.passedCourses.map((course: any) => (
+                              <span key={course._id}
+                                className="px-2 py-0.5 bg-purple-600/20 text-purple-400 border border-purple-600/30 rounded text-xs font-medium">
+                                {course.title}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-400">
+                          {gta.gtaApprovedAt ? new Date(gta.gtaApprovedAt).toLocaleDateString() : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Eligibility info */}
+        <div className="rounded-xl p-6 mt-6"
+          style={{ backgroundColor: 'rgba(147,51,234,0.08)', border: '1px solid rgba(147,51,234,0.25)' }}>
+          <h3 className="text-lg font-bold text-purple-300 mb-4">GTA Eligibility Criteria</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-start gap-3">
+              <div className="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center shrink-0 mt-1 text-sm font-bold">1</div>
+              <div>
+                <p className="font-medium text-purple-200">Minimum 3 Courses</p>
+                <p className="text-sm text-purple-400">Pass at least 3 different course quizzes</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center shrink-0 mt-1 text-sm font-bold">2</div>
+              <div>
+                <p className="font-medium text-purple-200">Passing Score</p>
+                <p className="text-sm text-purple-400">Score 70% or higher on each course quiz</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="rounded-xl shadow-2xl max-w-sm w-full p-6" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
+            <h3 className="text-lg font-bold text-white mb-2">
+              {confirmModal.action === 'approve'
+                ? `Approve ${confirmModal.userName} as GTA?`
+                : `Reject ${confirmModal.userName}'s application?`}
+            </h3>
+            <p className="text-gray-400 text-sm mb-6">
+              {confirmModal.action === 'approve'
+                ? `${confirmModal.userName} will be promoted to Graduate Teaching Assistant and can contribute lessons.`
+                : `${confirmModal.userName}'s GTA application will be rejected. They can reapply after further study.`}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmModal({ isOpen: false, action: null, userId: null, userName: null })}
+                className="flex-1 px-4 py-2 border border-gray-600 text-gray-400 rounded-lg hover:bg-white/[0.05] transition text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmAction}
+                className={`flex-1 px-4 py-2 text-white rounded-lg transition text-sm font-medium ${
+                  confirmModal.action === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                {confirmModal.action === 'approve' ? 'Approve GTA' : 'Reject'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

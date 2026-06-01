@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Award, TrendingUp, Zap, ArrowRight } from 'lucide-react';
+import { BookOpen, Award, TrendingUp, Zap, ArrowRight, CheckCircle, Clock, Star, Pin, GraduationCap } from 'lucide-react';
 import axios from '../../api/axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
@@ -70,8 +70,40 @@ const StudentDashboard = () => {
   const [quizzesCompleted, setQuizzesCompleted] = useState(0);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [recommended, setRecommended] = useState<any[]>([]);
+  const [gtaStatus, setGtaStatus] = useState<{
+    passedCount: number;
+    requiredCount: number;
+    isEligible: boolean;
+    alreadyApplied: boolean;
+    isGTA: boolean;
+    gtaStatus: string;
+    passedCourses: any[];
+  } | null>(null);
+  const [applying, setApplying] = useState(false);
 
-  useEffect(() => { fetchDashboard(); }, []);
+  useEffect(() => { fetchDashboard(); fetchGTAStatus(); }, []);
+
+  const fetchGTAStatus = async () => {
+    try {
+      const { data } = await axios.get('/student/gta-status');
+      setGtaStatus(data);
+    } catch {
+      // silent — GTA status is non-critical
+    }
+  };
+
+  const handleApplyGTA = async () => {
+    try {
+      setApplying(true);
+      await axios.post('/student/apply-gta');
+      toast.success('GTA application submitted! Admin will review shortly.');
+      fetchGTAStatus();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to apply');
+    } finally {
+      setApplying(false);
+    }
+  };
 
   const fetchDashboard = async () => {
     try {
@@ -147,9 +179,9 @@ const StudentDashboard = () => {
 
   // status badge helper
   const statusBadge = (status: string) => {
-    if (status === 'approved') return { bg: 'rgba(34,197,94,0.15)', color: '#4ade80', border: 'rgba(34,197,94,0.3)', label: '✅ Enrolled' };
-    if (status === 'pending')  return { bg: 'rgba(234,179,8,0.15)',  color: '#facc15', border: 'rgba(234,179,8,0.3)',  label: '⏳ Pending'  };
-    return                            { bg: 'rgba(239,68,68,0.15)',  color: '#f87171', border: 'rgba(239,68,68,0.3)',  label: '❌ Rejected' };
+    if (status === 'approved') return { bg: 'rgba(34,197,94,0.15)', color: '#4ade80', border: 'rgba(34,197,94,0.3)', label: 'Enrolled' };
+    if (status === 'pending')  return { bg: 'rgba(234,179,8,0.15)',  color: '#facc15', border: 'rgba(234,179,8,0.3)',  label: 'Pending'  };
+    return                            { bg: 'rgba(239,68,68,0.15)',  color: '#f87171', border: 'rgba(239,68,68,0.3)',  label: 'Rejected' };
   };
 
   return (
@@ -161,7 +193,7 @@ const StudentDashboard = () => {
         {/* Welcome */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white">
-            Hello, {user?.name?.split(' ')[0] || 'Student'} 👋
+            Hello, {user?.name?.split(' ')[0] || 'Student'}
           </h1>
           <p className="text-gray-400 text-sm mt-1">Ready to continue your learning journey?</p>
         </div>
@@ -170,7 +202,7 @@ const StudentDashboard = () => {
         {user?.role === 'teacher' ? (
           <div className="rounded-xl p-5 mb-6 flex items-center gap-4"
             style={{ background: 'linear-gradient(to right, rgba(34,197,94,0.15), rgba(22,163,74,0.1))', border: '1px solid rgba(34,197,94,0.3)' }}>
-            <span className="text-2xl">✅</span>
+            <CheckCircle size={22} className="text-green-400" />
             <div>
               <p className="font-semibold text-green-400">You are an Instructor</p>
               <p className="text-green-600 text-sm">Create and manage courses from the Teacher Dashboard.</p>
@@ -193,7 +225,7 @@ const StudentDashboard = () => {
             style={{ background: 'linear-gradient(to right, rgba(234,179,8,0.15), rgba(234,179,8,0.05))', border: '1px solid rgba(234,179,8,0.3)' }}
           >
             <div className="flex items-center gap-3">
-              <span className="text-3xl">⭐</span>
+              <Star size={28} className="text-yellow-400" />
               <div>
                 <p className="text-yellow-400 font-bold text-2xl leading-none">{user?.performanceMetrics?.creditPoints}</p>
                 <p className="text-yellow-600 text-sm mt-0.5">Credit Points earned</p>
@@ -244,7 +276,7 @@ const StudentDashboard = () => {
               iconBg: 'rgba(249,115,22,0.15)',
               value: `${currentStreak} ${currentStreak === 1 ? 'day' : 'days'}`,
               label: 'Learning Streak',
-              hint: 'Keep it going! 🔥',
+              hint: 'Keep it going!',
               hover: 'rgba(249,115,22,0.5)',
             },
           ].map((s) => (
@@ -267,6 +299,98 @@ const StudentDashboard = () => {
             </Link>
           ))}
         </div>
+
+        {/* GTA Progress Section */}
+        {gtaStatus && !gtaStatus.isGTA && (
+          <div className="rounded-xl p-6 mb-6" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
+            <div className="flex items-center gap-3 mb-4">
+              <GraduationCap size={24} className="text-purple-400" />
+              <div>
+                <h3 className="text-lg font-bold text-white">Graduate Teaching Assistant</h3>
+                <p className="text-gray-400 text-sm">Pass 3 course quizzes (70%+) to become a GTA and contribute lessons</p>
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="mb-4">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-gray-400">Courses Passed</span>
+                <span className="text-white font-semibold">{gtaStatus.passedCount} / {gtaStatus.requiredCount}</span>
+              </div>
+              <div className="w-full rounded-full h-3" style={{ backgroundColor: ELEVATED }}>
+                <div
+                  className="bg-gradient-to-r from-purple-500 to-blue-500 h-3 rounded-full transition-all"
+                  style={{ width: `${Math.min((gtaStatus.passedCount / gtaStatus.requiredCount) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Passed course pills + remaining slots */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {gtaStatus.passedCourses.map((course: any) => (
+                <span key={course._id}
+                  className="flex items-center gap-1 px-3 py-1 bg-green-600/20 text-green-400 border border-green-600/30 rounded-full text-xs font-semibold">
+                  <CheckCircle size={12} />
+                  {course.title}
+                </span>
+              ))}
+              {Array.from({ length: Math.max(0, 3 - gtaStatus.passedCount) }).map((_, i) => (
+                <span key={i}
+                  className="flex items-center gap-1 px-3 py-1 text-gray-500 border border-gray-700 rounded-full text-xs"
+                  style={{ backgroundColor: ELEVATED }}>
+                  <BookOpen size={12} />
+                  Pass a course
+                </span>
+              ))}
+            </div>
+
+            {gtaStatus.isEligible && !gtaStatus.alreadyApplied && (
+              <button
+                onClick={handleApplyGTA}
+                disabled={applying}
+                className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 text-white font-bold rounded-lg transition"
+              >
+                {applying ? 'Submitting...' : 'Apply to become Graduate Teaching Assistant'}
+              </button>
+            )}
+
+            {gtaStatus.alreadyApplied && gtaStatus.gtaStatus === 'pending' && (
+              <div className="flex items-center gap-3 p-4 rounded-lg"
+                style={{ backgroundColor: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.3)' }}>
+                <Clock size={20} className="text-yellow-400 shrink-0" />
+                <div>
+                  <p className="text-yellow-400 font-semibold text-sm">Application Under Review</p>
+                  <p className="text-gray-400 text-xs mt-1">Admin is reviewing your GTA application. You will be notified once approved.</p>
+                </div>
+              </div>
+            )}
+
+            {gtaStatus.gtaStatus === 'rejected' && (
+              <div className="p-4 rounded-lg"
+                style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}>
+                <p className="text-red-400 text-sm">Your application was not approved this time. Keep learning and try again!</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* GTA approved banner */}
+        {gtaStatus?.isGTA && (
+          <div className="rounded-xl p-6 mb-6"
+            style={{ background: 'linear-gradient(135deg, rgba(147,51,234,0.2), rgba(59,130,246,0.2))', border: '1px solid rgba(147,51,234,0.5)' }}>
+            <div className="flex items-center gap-3 mb-2">
+              <GraduationCap size={28} className="text-purple-400" />
+              <h3 className="text-xl font-bold text-white">Graduate Teaching Assistant</h3>
+            </div>
+            <p className="text-gray-300 mb-4">You can now contribute lessons to courses you are enrolled in.</p>
+            <button
+              onClick={() => navigate('/gta/contributions')}
+              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition"
+            >
+              View My Contributions
+            </button>
+          </div>
+        )}
 
         {/* Knowledge Journey */}
         {(() => {
@@ -294,7 +418,9 @@ const StudentDashboard = () => {
                 {milestones.map((m, i) => (
                   <div key={i} className="flex items-center gap-3 p-3 rounded-lg"
                     style={{ backgroundColor: m.done ? 'rgba(34,197,94,0.08)' : ELEVATED }}>
-                    <span className="text-base leading-none">{m.done ? '✅' : '⬜'}</span>
+                    {m.done
+                      ? <CheckCircle size={18} className="text-green-400 shrink-0" />
+                      : <Clock size={18} className="text-gray-600 shrink-0" />}
                     <div>
                       <p className={`text-sm font-semibold leading-tight ${m.done ? 'text-green-400' : 'text-gray-500'}`}>{m.label}</p>
                       <p className={`text-xs mt-0.5 ${m.done ? 'text-green-600' : 'text-gray-600'}`}>{m.desc}</p>
@@ -329,7 +455,7 @@ const StudentDashboard = () => {
                     style={{ background: 'linear-gradient(135deg, #6d28d9, #db2777)' }}>
                     {c.thumbnail
                       ? <img src={c.thumbnail} alt={c.title} className="w-full h-full object-cover" />
-                      : (c.title?.charAt(0) || '📘')}
+                      : (c.title?.charAt(0) || 'C')}
                   </div>
                   <div className="p-4">
                     <span className="text-xs text-gray-500 uppercase tracking-wide">{c.category || 'General'}</span>
@@ -354,7 +480,7 @@ const StudentDashboard = () => {
                 notice: 'Notice Board',
                 today: "Today's Tasks",
                 upcoming: 'Upcoming Tasks',
-                notes: '📝 My Notes',
+                notes: 'My Notes',
               };
               const active = activeTab === tab;
               return (
@@ -370,7 +496,7 @@ const StudentDashboard = () => {
           <div className="p-6 min-h-[280px]">
             {activeTab === 'notice' && (
               <div className="flex flex-col items-center justify-center h-48 opacity-60">
-                <span className="text-3xl mb-3">📌</span>
+                <Pin size={28} className="text-gray-500 mb-3" />
                 <p className="font-medium text-white">No new notices</p>
                 <p className="text-sm text-gray-500 mt-1">You're all caught up!</p>
               </div>

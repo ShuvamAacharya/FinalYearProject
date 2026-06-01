@@ -39,6 +39,9 @@ import QuizApprovals from './pages/admin/QuizApprovals';
 import InstructorEligibility from './pages/admin/InstructorEligibility';
 import PaymentLogs from './pages/admin/PaymentLogs';
 
+// Pages — GTA
+import GTADashboard from './pages/gta/GTADashboard';
+
 import ProtectedRoute from './components/ProtectedRoute';
 
 
@@ -67,12 +70,12 @@ function App() {
         <Route path="/courses/:courseId" element={<CoursePreview />} />
 
         {/* Profile — all authenticated roles */}
-        <Route element={<ProtectedRoute allowedRoles={['student', 'teacher', 'admin']} />}>
+        <Route element={<ProtectedRoute allowedRoles={['student', 'gta', 'teacher', 'admin']} />}>
           <Route path="/profile" element={<Profile />} />
         </Route>
 
-        {/* Student Routes */}
-        <Route element={<ProtectedRoute allowedRoles={['student']} />}>
+        {/* Student Routes — also accessible by gta role */}
+        <Route element={<ProtectedRoute allowedRoles={['student', 'gta']} />}>
           <Route path="/student/home" element={<StudentHome />} />
           <Route path="/student/dashboard" element={<StudentDashboard />} />
           <Route path="/student/browse-courses" element={<BrowseCourses />} />
@@ -83,12 +86,17 @@ function App() {
           <Route path="/student/certificates" element={<Certificates />} />
         </Route>
 
-        {/* General Quiz Routes — students and teachers */}
-        <Route element={<ProtectedRoute allowedRoles={['student', 'teacher']} />}>
+        {/* General Quiz Routes — students, gta, and teachers */}
+        <Route element={<ProtectedRoute allowedRoles={['student', 'gta', 'teacher']} />}>
           <Route path="/student/test-yourself" element={<TestYourself />} />
           <Route path="/student/quizzes" element={<TestYourself />} />
           <Route path="/student/general-quiz/:quizId" element={<TakeGeneralQuiz />} />
           <Route path="/student/quiz-history" element={<QuizHistory />} />
+        </Route>
+
+        {/* GTA Routes */}
+        <Route element={<ProtectedRoute allowedRoles={['gta']} />}>
+          <Route path="/gta/contributions" element={<GTADashboard />} />
         </Route>
 
         {/* Teacher Routes */}

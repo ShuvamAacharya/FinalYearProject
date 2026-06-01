@@ -4,7 +4,9 @@ import axios from '../../api/axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
 import ProfileDropdown from '../../components/common/ProfileDropdown';
-import { FiBook, FiClock, FiCheckCircle, FiLock, FiArrowLeft, FiPlay } from 'react-icons/fi';
+import { FiBook, FiClock, FiCheckCircle, FiLock, FiPlay } from 'react-icons/fi';
+import { GraduationCap } from 'lucide-react';
+import PageHeader from '../../components/ui/PageHeader';
 
 const BG     = '#0f1117';
 const CARD   = '#1a1d27';
@@ -20,6 +22,8 @@ interface Lesson {
   order: number;
   completed: boolean;
   completedAt?: string;
+  isContribution?: boolean;
+  contributedBy?: { _id: string; name: string; role: string } | null;
 }
 
 const DarkHeader = ({ user, onLogout }: { user: any; onLogout: () => void }) => (
@@ -129,13 +133,13 @@ const CourseDetail = () => {
       <DarkHeader user={user} onLogout={handleLogout} />
 
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex-1">
-        <Link
-          to="/student/dashboard"
-          className="inline-flex items-center text-blue-400 hover:text-blue-300 mb-6 transition-colors text-sm font-medium"
-        >
-          <FiArrowLeft className="mr-2" />
-          Back to Dashboard
-        </Link>
+        <PageHeader
+          title={course?.title || 'Course'}
+          subtitle={course?.teacher?.name ? `By ${course.teacher.name}` : undefined}
+          showBack
+          backTo="/student/home"
+          backLabel="Back to My Courses"
+        />
 
         {enrollmentStatus === 'pending' && (
           <div
@@ -248,10 +252,10 @@ const CourseDetail = () => {
                     <Link
                       key={lesson._id}
                       to={`/student/lessons/${lesson._id}`}
-                      className="block rounded-xl p-4 transition-all duration-150 hover:border-blue-500/50"
+                      className="block rounded-xl p-4 transition-all duration-150"
                       style={{
-                        backgroundColor: lesson.completed ? 'rgba(34,197,94,0.08)' : ELEVATED,
-                        border: `1px solid ${lesson.completed ? 'rgba(34,197,94,0.35)' : BORDER}`,
+                        backgroundColor: lesson.isContribution ? 'rgba(147,51,234,0.06)' : (lesson.completed ? 'rgba(34,197,94,0.08)' : ELEVATED),
+                        border: `1px solid ${lesson.isContribution ? 'rgba(147,51,234,0.35)' : (lesson.completed ? 'rgba(34,197,94,0.35)' : BORDER)}`,
                       }}
                     >
                       <div className="flex items-center gap-4">
@@ -268,27 +272,36 @@ const CourseDetail = () => {
 
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-white mb-1 truncate">{lesson.title}</h3>
-                          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400">
-                            <span className="flex items-center gap-1">
-                              <FiClock className="text-xs" />
-                              {lesson.duration} min
-                            </span>
-                            {lesson.videoUrl && (
+                          {lesson.isContribution && lesson.contributedBy ? (
+                            <div className="flex items-center gap-1 mt-1">
+                              <GraduationCap size={12} className="text-purple-400 shrink-0" />
+                              <span className="text-purple-400 text-xs font-semibold">
+                                Contributed by {lesson.contributedBy.name} · Graduate Teaching Assistant
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400">
                               <span className="flex items-center gap-1">
-                                <FiPlay className="text-xs" />
-                                Video
+                                <FiClock className="text-xs" />
+                                {lesson.duration} min
                               </span>
-                            )}
-                            {lesson.completed && lesson.completedAt && (
-                              <span className="text-green-400 text-xs">
-                                ✓ Completed {new Date(lesson.completedAt).toLocaleDateString()}
-                              </span>
-                            )}
-                          </div>
+                              {lesson.videoUrl && (
+                                <span className="flex items-center gap-1">
+                                  <FiPlay className="text-xs" />
+                                  Video
+                                </span>
+                              )}
+                              {lesson.completed && lesson.completedAt && (
+                                <span className="text-green-400 text-xs">
+                                  Completed {new Date(lesson.completedAt).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
 
-                        <span className={`font-medium text-sm shrink-0 ${lesson.completed ? 'text-green-400' : 'text-blue-400'}`}>
-                          {lesson.completed ? 'Review' : 'Start →'}
+                        <span className={`font-medium text-sm shrink-0 ${lesson.completed ? 'text-green-400' : lesson.isContribution ? 'text-purple-400' : 'text-blue-400'}`}>
+                          {lesson.completed ? 'Review' : 'Start'}
                         </span>
                       </div>
                     </Link>

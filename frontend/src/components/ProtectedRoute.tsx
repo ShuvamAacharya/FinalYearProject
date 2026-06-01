@@ -30,9 +30,9 @@ const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     const dashboardPath =
-      user.role === 'admin' ? '/admin/dashboard'
+      user.role === 'admin'   ? '/admin/dashboard'
       : user.role === 'teacher' ? '/teacher/dashboard'
-      : '/student/dashboard';
+      : '/student/dashboard'; // both 'student' and 'gta' go here
     return <Navigate to={dashboardPath} replace />;
   }
 
