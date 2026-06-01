@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NotificationDropdown from './NotificationDropdown';
+import { User, School, LogOut } from 'lucide-react';
 
 interface ProfileDropdownProps {
   user: {
@@ -99,7 +100,7 @@ const ProfileDropdown = ({ user, onLogout }: ProfileDropdownProps) => {
               onClick={() => { setOpen(false); navigate('/profile'); }}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:bg-[#0f1117] hover:text-white transition-colors text-sm"
             >
-              <span className="text-base">👤</span>
+              <User size={16} />
               View Profile
             </button>
 
@@ -107,7 +108,7 @@ const ProfileDropdown = ({ user, onLogout }: ProfileDropdownProps) => {
               onClick={() => { setOpen(false); navigate('/'); }}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:bg-[#0f1117] hover:text-white transition-colors text-sm"
             >
-              <span className="text-base">🏫</span>
+              <School size={16} />
               About EduCity
             </button>
 
@@ -117,7 +118,7 @@ const ProfileDropdown = ({ user, onLogout }: ProfileDropdownProps) => {
               onClick={() => { setOpen(false); onLogout(); }}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors text-sm"
             >
-              <span className="text-base">🚪</span>
+              <LogOut size={16} />
               Logout
             </button>
           </div>

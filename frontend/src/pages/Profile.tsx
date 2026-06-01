@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Lock } from 'lucide-react';
+import { CheckCircle2, Lock, GraduationCap } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import ProfileDropdown from '../components/common/ProfileDropdown';
 import InstructorEligibilityBanner from '../components/instructor/InstructorEligibilityBanner';
@@ -83,10 +83,10 @@ const Profile = () => {
   const eligibility = getEligibilityProgress(pm);
   const creditPts = pm?.creditPoints ?? 0;
   const rank = creditPts >= 500
-    ? { label: 'Gold',   color: 'text-yellow-400', bg: 'bg-yellow-500/20 border-yellow-500/30', icon: '🥇' }
+    ? { label: 'Gold',   color: 'text-yellow-400', bg: 'bg-yellow-500/20 border-yellow-500/30', icon: 'G' }
     : creditPts >= 100
-    ? { label: 'Silver', color: 'text-gray-300',   bg: 'bg-gray-500/20 border-gray-500/30',     icon: '🥈' }
-    : { label: 'Bronze', color: 'text-orange-400', bg: 'bg-orange-500/20 border-orange-500/30', icon: '🥉' };
+    ? { label: 'Silver', color: 'text-gray-300',   bg: 'bg-gray-500/20 border-gray-500/30',     icon: 'S' }
+    : { label: 'Bronze', color: 'text-orange-400', bg: 'bg-orange-500/20 border-orange-500/30', icon: 'B' };
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: BG, fontFamily: 'Inter, system-ui, sans-serif' }}>
@@ -244,7 +244,7 @@ const Profile = () => {
                 { label: 'Average Score',  value: `${pm.averageScore ?? 0}%`,                              color: '#4ade80' },
                 { label: 'Total Points',   value: pm.totalPointsEarned,                                    color: '#c084fc' },
                 { label: 'Avg Time',       value: `${Math.round((pm.averageCompletionTime ?? 0) / 60)}m`,  color: '#facc15' },
-                { label: '⭐ Credit Points', value: creditPts,                                             color: '#facc15' },
+                { label: 'Credit Points', value: creditPts,                                             color: '#facc15' },
                 { label: 'General Quizzes', value: pm.generalQuizzesTaken ?? 0,                            color: '#fb923c' },
               ].map(({ label, value, color }) => (
                 <div key={label} className="p-5" style={{ backgroundColor: CARD }}>
@@ -262,7 +262,7 @@ const Profile = () => {
             className="rounded-2xl px-6 py-4 flex items-center gap-3"
             style={{ backgroundColor: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.2)' }}
           >
-            <span className="text-3xl">🎓</span>
+            <GraduationCap size={28} className="text-green-400" />
             <div>
               <p className="text-green-400 font-semibold text-sm">Certified Instructor</p>
               {user.promotedToInstructorAt && (

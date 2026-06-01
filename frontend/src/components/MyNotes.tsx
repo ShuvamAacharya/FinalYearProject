@@ -175,7 +175,7 @@ export default function MyNotes() {
             const course = courseNotes[0]?.course;
             return (
               <div key={courseId}>
-                <h3 className="text-xl font-bold text-white mb-4">📚 {course?.title}</h3>
+                <h3 className="text-xl font-bold text-white mb-4">{course?.title}</h3>
                 <div className="space-y-4">
                   {courseNotes.map((note) => (
                     <div

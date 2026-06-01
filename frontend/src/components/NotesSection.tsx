@@ -122,7 +122,7 @@ export default function NotesSection({
 
   return (
     <div className="bg-[#1a1d27] border border-gray-700 rounded-lg p-6">
-      <h2 className="text-2xl font-bold text-white mb-6">📝 Take Notes</h2>
+      <h2 className="text-2xl font-bold text-white mb-6">Take Notes</h2>
 
       <div className="mb-8 pb-8 border-b border-gray-700">
         <input

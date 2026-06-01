@@ -35,7 +35,7 @@ const OAuthSuccess = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100">
       <div className="card text-center p-8">
-        <div className="text-4xl mb-4">⏳</div>
+        <div className="flex justify-center mb-4"><span className="w-10 h-10 rounded-full border-2 border-blue-500 border-t-transparent animate-spin block" /></div>
         <p className="text-gray-600 text-lg">Signing you in with Google...</p>
       </div>
     </div>

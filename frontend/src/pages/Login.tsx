@@ -128,9 +128,9 @@ const Login = () => {
             <p className="text-xs text-gray-500 mb-2">Quick demo login:</p>
             <div className="flex gap-2">
               {([
-                { label: '👤 Student', email: 'student@educity.com', password: 'Student@123' },
-                { label: '🎓 Teacher', email: 'teacher@educity.com', password: 'Teacher@123' },
-                { label: '🔧 Admin',   email: 'admin@educity.com',   password: 'Admin@123'   },
+                { label: 'Student', email: 'student@educity.com', password: 'Student@123' },
+                { label: 'Teacher', email: 'teacher@educity.com', password: 'Teacher@123' },
+                { label: 'Admin',   email: 'admin@educity.com',   password: 'Admin@123'   },
               ] as const).map(({ label, email: demoEmail, password: demoPassword }) => (
                 <button
                   key={demoEmail}

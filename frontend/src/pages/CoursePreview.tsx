@@ -4,6 +4,7 @@ import axios from 'axios';
 import axiosInstance from '../api/axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
+import { BookOpen, Video, FileText, Layers, Clock, ClipboardList, Target, CheckCircle, Lock, CreditCard, ShieldCheck } from 'lucide-react';
 
 const CoursePreview = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -154,7 +155,7 @@ const CoursePreview = () => {
                 className="rounded-xl p-6 mb-6"
                 style={{ backgroundColor: '#1a1d27', border: '1px solid #2d3748' }}
               >
-                <h2 className="text-white font-semibold text-lg mb-4">📚 Course Content</h2>
+                <h2 className="text-white font-semibold text-lg mb-4">Course Content</h2>
                 {course.lessons?.length > 0 ? (
                   <div className="space-y-1">
                     {[...course.lessons]
@@ -166,14 +167,14 @@ const CoursePreview = () => {
                           style={{ borderBottom: index < course.lessons.length - 1 ? '1px solid #2d3748' : 'none' }}
                         >
                           <span className="text-gray-500 text-sm w-5 shrink-0 text-right">{index + 1}</span>
-                          <span className="text-sm shrink-0">
-                            {lesson.type === 'video' ? '📹' : lesson.type === 'mixed' ? '🔀' : '📄'}
+                          <span className="text-gray-400 shrink-0">
+                            {lesson.type === 'video' ? <Video size={14} /> : lesson.type === 'mixed' ? <Layers size={14} /> : <FileText size={14} />}
                           </span>
                           <span className="text-gray-300 text-sm flex-1 truncate">{lesson.title}</span>
                           {lesson.duration && (
-                            <span className="text-gray-500 text-xs shrink-0">⏱ {lesson.duration}</span>
+                            <span className="text-gray-500 text-xs shrink-0 flex items-center gap-1"><Clock size={11} />{lesson.duration}</span>
                           )}
-                          <span className="text-gray-600 text-xs shrink-0">🔒</span>
+                          <Lock size={12} className="text-gray-600 shrink-0" />
                         </div>
                       ))}
                   </div>
@@ -185,16 +186,16 @@ const CoursePreview = () => {
               {/* Stats row */}
               <div className="grid grid-cols-3 gap-4">
                 {[
-                  { label: 'Lessons', value: course.lessons?.length ?? 0, icon: '📖' },
-                  { label: 'Quizzes', value: course.quizCount ?? 0,        icon: '📝' },
-                  { label: 'Level',   value: course.difficulty || course.level || 'Beginner', icon: '🎯' },
+                  { label: 'Lessons', value: course.lessons?.length ?? 0, icon: <BookOpen size={20} className="text-blue-400" /> },
+                  { label: 'Quizzes', value: course.quizCount ?? 0,        icon: <ClipboardList size={20} className="text-purple-400" /> },
+                  { label: 'Level',   value: course.difficulty || course.level || 'Beginner', icon: <Target size={20} className="text-green-400" /> },
                 ].map((stat) => (
                   <div
                     key={stat.label}
                     className="rounded-xl p-4 text-center"
                     style={{ backgroundColor: '#1a1d27', border: '1px solid #2d3748' }}
                   >
-                    <p className="text-2xl mb-1">{stat.icon}</p>
+                    <div className="flex justify-center mb-1">{stat.icon}</div>
                     <p className="text-white font-bold text-sm">{stat.value}</p>
                     <p className="text-gray-500 text-xs">{stat.label}</p>
                   </div>
@@ -212,10 +213,10 @@ const CoursePreview = () => {
                   <img src={course.thumbnail} alt={course.title} className="w-full h-44 object-cover" />
                 ) : (
                   <div
-                    className="w-full h-44 flex items-center justify-center text-5xl"
+                    className="w-full h-44 flex items-center justify-center"
                     style={{ background: 'linear-gradient(135deg, rgba(6,78,59,0.4), rgba(30,58,138,0.4))' }}
                   >
-                    📚
+                    <BookOpen size={48} className="text-gray-500" />
                   </div>
                 )}
 
@@ -249,14 +250,14 @@ const CoursePreview = () => {
                   >
                     {paying ? (
                       <>
-                        <span className="animate-spin">⏳</span>
+                        <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
                         Processing...
                       </>
                     ) : !user ? (
                       'Login to Enroll'
                     ) : course.price > 0 ? (
                       <>
-                        <span>💳</span>
+                        <CreditCard size={16} />
                         Pay Rs. {course.price} with eSewa
                       </>
                     ) : (
@@ -266,7 +267,7 @@ const CoursePreview = () => {
 
                   {course.price > 0 && (
                     <p className="text-center text-gray-600 text-xs mt-3">
-                      🔒 Secured by eSewa Payment Gateway
+                      <span className="flex items-center justify-center gap-1"><ShieldCheck size={12} /> Secured by eSewa</span>
                     </p>
                   )}
 
@@ -277,10 +278,9 @@ const CoursePreview = () => {
                   )}
 
                   <div className="mt-5 space-y-2 text-xs text-gray-400">
-                    <p>✅ Full course access</p>
-                    <p>✅ Quizzes and assessments</p>
-                    <p>✅ Certificate on completion</p>
-                    <p>✅ Learn at your own pace</p>
+                    {['Full course access', 'Quizzes and assessments', 'Certificate on completion', 'Learn at your own pace'].map((item) => (
+                      <p key={item} className="flex items-center gap-2"><CheckCircle size={12} className="text-green-400 shrink-0" />{item}</p>
+                    ))}
                   </div>
                 </div>
               </div>
