@@ -33,7 +33,9 @@ export const getCourseLessons = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied. Enrollment not approved.' });
     }
 
-    const lessons = await Lesson.find({ courseId, status: 'active' }).sort({ order: 1 });
+    const lessons = await Lesson.find({ courseId, status: 'active' })
+      .populate('contributedBy', 'name role')
+      .sort({ order: 1 });
     const lessonIds = lessons.map((l) => l._id);
     const progressRecords = await LessonProgress.find({
       studentId,
@@ -54,6 +56,8 @@ export const getCourseLessons = async (req, res) => {
         coverImage: lesson.coverImage,
         duration: lesson.duration,
         order: lesson.order,
+        isContribution: lesson.isContribution || false,
+        contributedBy: lesson.contributedBy || null,
         completed: progress?.completed || false,
         completedAt: progress?.completedAt,
       };

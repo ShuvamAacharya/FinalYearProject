@@ -384,3 +384,68 @@ export const approveQuiz = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+// ─── GTA MANAGEMENT ───────────────────────────────────────────────
+
+export const getGTAApplications = async (req, res) => {
+  try {
+    const applications = await User.find({ gtaStatus: 'pending' })
+      .populate('passedCourses', 'title')
+      .select('name email passedCourses gtaStatus createdAt')
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, count: applications.length, applications });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const approveGTA = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (user.gtaStatus !== 'pending') {
+      return res.status(400).json({ message: 'No pending GTA application for this user' });
+    }
+
+    user.role = 'gta';
+    user.gtaStatus = 'approved';
+    user.gtaApprovedAt = new Date();
+    await user.save();
+
+    res.json({
+      success: true,
+      message: `${user.name} is now a Graduate Teaching Assistant`,
+      user: { _id: user._id, name: user.name, email: user.email, role: user.role, gtaStatus: user.gtaStatus },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const rejectGTA = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.gtaStatus = 'rejected';
+    await user.save();
+
+    res.json({ success: true, message: `GTA application for ${user.name} has been rejected` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getAllGTAs = async (req, res) => {
+  try {
+    const gtas = await User.find({ role: 'gta' })
+      .populate('passedCourses', 'title')
+      .select('name email passedCourses gtaApprovedAt')
+      .sort({ gtaApprovedAt: -1 });
+
+    res.json({ success: true, count: gtas.length, gtas });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

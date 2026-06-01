@@ -49,6 +49,15 @@ const lessonSchema = new mongoose.Schema(
       enum: ['active', 'inactive'],
       default: 'active',
     },
+    contributedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    isContribution: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

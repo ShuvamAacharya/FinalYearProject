@@ -281,6 +281,11 @@ export const submitQuiz = async (req, res) => {
       metadata: { quizId, score: percentage, passed },
     });
 
+    // GTA progress: track passed course quizzes (70%+)
+    if (passed && quiz.course) {
+      await checkCoursePassedForGTA(studentId, quiz.course.toString(), percentage);
+    }
+
     const review = quiz.questions.map((q, i) => ({
       question: q.question,
       options: q.options,
@@ -305,5 +310,151 @@ export const submitQuiz = async (req, res) => {
   } catch (error) {
     console.error('Submit quiz error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// ─── GTA: CHECK AND UPDATE PASSED COURSES ────────────────────────
+export const checkCoursePassedForGTA = async (studentId, courseId, score) => {
+  try {
+    if (score < 70) return;
+
+    const user = await User.findById(studentId);
+    if (!user) return;
+
+    const alreadyPassed = user.passedCourses
+      .map((id) => id.toString())
+      .includes(courseId.toString());
+
+    if (!alreadyPassed) {
+      user.passedCourses.push(courseId);
+      await user.save();
+    }
+  } catch (error) {
+    console.error('Error updating passed courses for GTA:', error);
+  }
+};
+
+// ─── GTA: GET STATUS ─────────────────────────────────────────────
+export const getGTAStatus = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).populate('passedCourses', 'title');
+
+    const passedCount = user.passedCourses?.length || 0;
+
+    res.json({
+      success: true,
+      passedCourses: user.passedCourses || [],
+      passedCount,
+      requiredCount: 3,
+      isEligible: passedCount >= 3,
+      alreadyApplied: user.gtaStatus === 'pending',
+      isGTA: user.role === 'gta',
+      gtaStatus: user.gtaStatus,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ─── GTA: APPLY ───────────────────────────────────────────────────
+export const applyForGTA = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if ((user.passedCourses?.length || 0) < 3) {
+      return res.status(403).json({
+        message: `You need to pass ${3 - (user.passedCourses?.length || 0)} more course(s) to apply`,
+      });
+    }
+    if (user.gtaStatus === 'pending') {
+      return res.status(400).json({ message: 'Your GTA application is already pending review' });
+    }
+    if (user.role === 'gta') {
+      return res.status(400).json({ message: 'You are already a Graduate Teaching Assistant' });
+    }
+
+    user.gtaStatus = 'pending';
+    await user.save();
+
+    res.json({ success: true, message: 'GTA application submitted! Admin will review your application.' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ─── GTA: CONTRIBUTE LESSON ───────────────────────────────────────
+export const addContributedLesson = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { title, content, videoUrl } = req.body;
+    const gtaId = req.user.id;
+
+    if (!title?.trim()) {
+      return res.status(400).json({ message: 'Lesson title is required' });
+    }
+
+    const enrollment = await Enrollment.findOne({ student: gtaId, course: courseId, status: 'approved' });
+    if (!enrollment) {
+      return res.status(403).json({ message: 'You can only contribute to courses you are enrolled in' });
+    }
+
+    const lessonCount = await Lesson.countDocuments({ courseId });
+
+    const lesson = await Lesson.create({
+      courseId,
+      title: title.trim(),
+      content: content?.trim() || '',
+      videoUrl: videoUrl?.trim() || '',
+      order: lessonCount + 1,
+      contributedBy: gtaId,
+      isContribution: true,
+    });
+
+    const populated = await Lesson.findById(lesson._id).populate('contributedBy', 'name role');
+
+    res.status(201).json({
+      success: true,
+      message: 'Lesson contributed successfully! It is now visible to all students.',
+      lesson: populated,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ─── GTA: GET MY CONTRIBUTIONS ────────────────────────────────────
+export const getMyContributions = async (req, res) => {
+  try {
+    const lessons = await Lesson.find({ contributedBy: req.user.id })
+      .populate('courseId', 'title')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: lessons.length,
+      lessons: lessons.map((l) => ({ ...l.toObject(), course: l.courseId })),
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ─── GTA: GET APPROVED ENROLLED COURSES (for contribution dropdown) ─
+export const getApprovedEnrolledCourses = async (req, res) => {
+  try {
+    const enrollments = await Enrollment.find({ student: req.user.id, status: 'approved' })
+      .populate({ path: 'course', select: 'title teacher', populate: { path: 'teacher', select: 'name' } });
+
+    const courses = enrollments
+      .filter((e) => e.course)
+      .map((e) => ({
+        _id: e.course._id,
+        title: e.course.title,
+        instructor: e.course.teacher,
+      }));
+
+    res.json({ success: true, courses });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

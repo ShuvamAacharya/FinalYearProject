@@ -35,8 +35,25 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['student', 'teacher', 'admin'],
+      enum: ['student', 'gta', 'teacher', 'admin'],
       default: 'student',
+    },
+
+    // GTA (Graduate Teaching Assistant) tracking
+    gtaStatus: {
+      type: String,
+      enum: ['none', 'pending', 'approved', 'rejected'],
+      default: 'none',
+    },
+    passedCourses: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Course',
+      },
+    ],
+    gtaApprovedAt: {
+      type: Date,
+      default: null,
     },
     avatar: {
       type: String,

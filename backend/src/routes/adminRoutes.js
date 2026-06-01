@@ -19,6 +19,10 @@ import {
   approveCourse,
   getPendingQuizzes,
   approveQuiz,
+  getGTAApplications,
+  approveGTA,
+  rejectGTA,
+  getAllGTAs,
 } from '../controllers/adminController.js';
 
 const router = express.Router();
@@ -83,5 +87,11 @@ router.put('/reject-instructor/:userId', authMiddleware, roleMiddleware('admin')
     res.status(400).json({ success: false, message: error.message });
   }
 });
+
+// GTA management
+router.get('/gta-applications', authMiddleware, roleMiddleware('admin'), getGTAApplications);
+router.put('/approve-gta/:userId', authMiddleware, roleMiddleware('admin'), approveGTA);
+router.put('/reject-gta/:userId', authMiddleware, roleMiddleware('admin'), rejectGTA);
+router.get('/all-gtas', authMiddleware, roleMiddleware('admin'), getAllGTAs);
 
 export default router;

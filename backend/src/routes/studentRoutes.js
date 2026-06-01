@@ -7,6 +7,11 @@ import {
   getEnrolledCourses,
   submitQuiz,
   getQuizResults,
+  getGTAStatus,
+  applyForGTA,
+  addContributedLesson,
+  getMyContributions,
+  getApprovedEnrolledCourses,
 } from '../controllers/studentController.js';
 import {
   getCourseLessons,
@@ -17,25 +22,38 @@ import User from '../models/User.js';
 
 const router = express.Router();
 
-// Dashboard
-router.get('/dashboard', authMiddleware, roleMiddleware('student'), getStudentDashboard);
+// Dashboard (student + gta)
+router.get('/dashboard', authMiddleware, roleMiddleware('student', 'gta'), getStudentDashboard);
 
-// Courses
-router.get('/courses', authMiddleware, roleMiddleware('student'), getEnrolledCourses);
-router.post('/courses/:courseId/enroll', authMiddleware, roleMiddleware('student'), enrollCourse);
+// Courses (student + gta)
+router.get('/courses', authMiddleware, roleMiddleware('student', 'gta'), getEnrolledCourses);
+router.post('/courses/:courseId/enroll', authMiddleware, roleMiddleware('student', 'gta'), enrollCourse);
 
-// Lessons
-router.get('/courses/:courseId/lessons', authMiddleware, roleMiddleware('student'), getCourseLessons);
-router.post('/lessons/:lessonId/complete', authMiddleware, roleMiddleware('student'), completeLesson);
-router.get('/courses/:courseId/progress', authMiddleware, roleMiddleware('student'), getCourseProgress);
+// Lessons (student + gta)
+router.get('/courses/:courseId/lessons', authMiddleware, roleMiddleware('student', 'gta'), getCourseLessons);
+router.post('/lessons/:lessonId/complete', authMiddleware, roleMiddleware('student', 'gta'), completeLesson);
+router.get('/courses/:courseId/progress', authMiddleware, roleMiddleware('student', 'gta'), getCourseProgress);
 
-// Quiz submission
-router.post('/quizzes/:quizId/submit', authMiddleware, submitQuiz);
+// Quiz submission (student + gta)
+router.post('/quizzes/:quizId/submit', authMiddleware, roleMiddleware('student', 'gta'), submitQuiz);
 
-// Quiz results
-router.get('/quiz-results', authMiddleware, roleMiddleware('student'), getQuizResults);
+// Quiz results (student + gta)
+router.get('/quiz-results', authMiddleware, roleMiddleware('student', 'gta'), getQuizResults);
 
-// Instructor promotion request (student self-service)
+// GTA eligibility and application (student + gta)
+router.get('/gta-status', authMiddleware, roleMiddleware('student', 'gta'), getGTAStatus);
+router.post('/apply-gta', authMiddleware, roleMiddleware('student'), applyForGTA);
+
+// GTA approved enrolled courses (for contribution dropdown)
+router.get('/enrolled-courses', authMiddleware, roleMiddleware('student', 'gta'), getApprovedEnrolledCourses);
+
+// GTA lesson contribution (only gta role)
+router.post('/courses/:courseId/contribute-lesson', authMiddleware, roleMiddleware('gta'), addContributedLesson);
+
+// GTA contributions list (only gta role)
+router.get('/my-contributions', authMiddleware, roleMiddleware('gta'), getMyContributions);
+
+// Instructor promotion request (legacy - kept for compatibility)
 router.post('/request-promotion', authMiddleware, roleMiddleware('student'), async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
@@ -46,10 +64,7 @@ router.post('/request-promotion', authMiddleware, roleMiddleware('student'), asy
       });
     }
     if (user.role === 'teacher') {
-      return res.status(400).json({
-        success: false,
-        message: 'You are already an instructor',
-      });
+      return res.status(400).json({ success: false, message: 'You are already an instructor' });
     }
     res.json({
       success: true,
